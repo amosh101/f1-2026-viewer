@@ -1,0 +1,2484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
+<title>F1 2026 — Interactive Regulation Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --ink: #f0f0fa;
+  --ink-muted: rgba(240, 240, 250, 0.55);
+  --ink-faint: rgba(240, 240, 250, 0.18);
+  --ghost-bg: rgba(240, 240, 250, 0.06);
+  --ghost-bd: rgba(240, 240, 250, 0.22);
+  --ghost-bg-hi: rgba(240, 240, 250, 0.12);
+  --ghost-bd-hi: rgba(240, 240, 250, 0.5);
+  --accent: #00d7b6;
+  --danger: #ff4d4d;
+  --ok: #46d39a;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --t-fast: 180ms;
+  --t-med: 320ms;
+  --t-slow: 600ms;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'tnum';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+body { min-height: 100svh; line-height: 1.5; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+/* ---------- LAYOUT STAGE ---------- */
+.stage {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 800px at 50% 0%, rgba(20, 22, 30, 0.6), transparent 60%),
+    radial-gradient(800px 600px at 100% 100%, rgba(30, 40, 60, 0.18), transparent 60%),
+    var(--bg);
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(20px, 4vw, 56px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity var(--t-med) var(--ease), transform var(--t-med) var(--ease);
+  will-change: opacity, transform;
+}
+.screen.active { opacity: 1; pointer-events: auto; transform: none; }
+
+/* ---------- TOP BAR ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.topbar .brand { display: flex; gap: 12px; align-items: center; }
+.topbar .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.topbar .nav { display: flex; gap: 28px; }
+.topbar .nav button { letter-spacing: 0.12em; text-transform: uppercase; font-size: 11px; color: var(--ink-muted); }
+.topbar .nav button[disabled] { opacity: 0.4; cursor: not-allowed; }
+.topbar .nav button:not([disabled]):hover { color: var(--ink); }
+.topbar .meta { display: flex; gap: 16px; align-items: center; }
+.topbar .meta .pill { padding: 4px 10px; border: 1px solid var(--ghost-bd); border-radius: 99px; font-size: 10px; letter-spacing: 0.15em; }
+
+/* ---------- GHOST BUTTON ---------- */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 26px;
+  border-radius: 32px;
+  background: var(--ghost-bg);
+  border: 1px solid var(--ghost-bd);
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.btn-ghost:hover { background: var(--ghost-bg-hi); border-color: var(--ghost-bd-hi); }
+.btn-ghost:active { transform: scale(0.98); }
+.btn-ghost .arrow { width: 14px; height: 14px; transition: transform var(--t-fast) var(--ease); }
+.btn-ghost:hover .arrow { transform: translateX(3px); }
+
+/* ---------- SPLASH ---------- */
+#splash {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#splash .big {
+  font-size: clamp(48px, 9vw, 140px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  background: linear-gradient(180deg, var(--ink) 30%, transparent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+#splash .year {
+  font-size: clamp(96px, 18vw, 280px);
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  background: linear-gradient(180deg, #00d7b6 0%, #d40000 60%, #ff8000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+#splash .tag {
+  margin-top: 12px;
+  font-size: 12px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.splash-bar {
+  margin-top: 36px;
+  width: min(80vw, 360px);
+  height: 2px;
+  background: var(--ink-faint);
+  overflow: hidden;
+  position: relative;
+}
+.splash-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--ink), transparent);
+  animation: sweep 1.2s var(--ease) forwards;
+}
+@keyframes sweep { from { transform: translateX(-100%);} to { transform: translateX(100%);} }
+
+/* ---------- HERO (TEAM GRID) ---------- */
+.hero {
+  margin-top: clamp(28px, 5vh, 60px);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+.hero h1 {
+  font-size: clamp(36px, 6vw, 84px);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  max-width: 14ch;
+}
+.hero h1 em { font-style: normal; color: var(--ink-muted); }
+.hero p.lede {
+  font-size: clamp(15px, 1.4vw, 18px);
+  color: var(--ink-muted);
+  max-width: 56ch;
+}
+.hero .quick {
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+  margin-top: 6px;
+}
+.hero .quick .stat {
+  display: flex; flex-direction: column;
+  padding: 14px 20px;
+  border: 1px solid var(--ghost-bd);
+  border-radius: 14px;
+  background: var(--ghost-bg);
+  min-width: 140px;
+}
+.hero .quick .stat .k { font-size: 10px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; }
+.hero .quick .stat .v { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+
+/* ---------- TEAM GRID ---------- */
+.team-grid-wrap {
+  margin-top: clamp(36px, 6vh, 80px);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.section-head h2 { font-size: 12px; font-weight: 600; color: var(--ink); }
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  flex: 1;
+  align-content: start;
+}
+.team-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px 20px 18px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--ink-faint);
+  text-align: left;
+  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+  overflow: hidden;
+  min-height: 140px;
+  cursor: pointer;
+}
+.team-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--team-color, var(--accent));
+  opacity: 0.85;
+}
+.team-card:hover { transform: translateY(-2px); border-color: var(--ghost-bd-hi); background: #101015; }
+.team-card .name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.team-card .nat {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.team-card .lead {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+}
+.team-card .lead .num { font-weight: 700; font-size: 16px; opacity: 0.9; }
+.team-card .lead .name { font-size: 13px; }
+.team-card .streak {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* ---------- TEAM DETAIL ---------- */
+.team-hero {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: clamp(20px, 4vw, 48px);
+  align-items: end;
+  min-height: 30vh;
+}
+.team-hero .crest {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 18px;
+  background: var(--team-color, #1a1a1a);
+  overflow: hidden;
+  display: flex; align-items: flex-end; padding: 24px;
+  isolation: isolate;
+}
+.team-hero .crest::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(60% 80% at 20% 0%, rgba(255,255,255,0.18), transparent 60%),
+    radial-gradient(60% 80% at 100% 100%, rgba(0,0,0,0.5), transparent 60%);
+  z-index: 0;
+}
+.team-hero .crest .num {
+  position: relative; z-index: 1;
+  font-size: clamp(120px, 22vw, 320px);
+  font-weight: 800;
+  line-height: 0.7;
+  color: rgba(255,255,255,0.12);
+  letter-spacing: -0.04em;
+  margin-left: -10px;
+}
+.team-hero .crest .tag {
+  position: absolute; top: 18px; left: 22px; z-index: 1;
+  font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: rgba(255,255,255,0.85);
+}
+.team-hero .name {
+  font-size: clamp(48px, 8vw, 120px);
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+}
+.team-hero .name .yr { font-size: 0.4em; vertical-align: super; color: var(--ink-muted); font-weight: 500; }
+.team-hero .meta {
+  display: flex; flex-wrap: wrap; gap: 18px; margin-top: 18px;
+  font-size: 12px; color: var(--ink-muted); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.team-hero .meta b { color: var(--ink); font-weight: 600; }
+
+.driver-row {
+  margin-top: clamp(28px, 4vh, 48px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.driver-card {
+  position: relative;
+  padding: 24px 24px 22px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--ink-faint);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+  min-height: 130px;
+}
+.driver-card .num {
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.8;
+  color: var(--ink);
+  font-feature-settings: 'tnum';
+}
+.driver-card .info .name { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.driver-card .info .nat { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-muted); margin-top: 4px; }
+.driver-card .info .age { font-size: 11px; color: var(--ink-muted); margin-top: 6px; }
+.driver-card .helmet {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--helmet-color, #555);
+  position: relative;
+  box-shadow: inset -6px -10px 16px rgba(0,0,0,0.45), inset 4px 4px 8px rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.driver-card .helmet::after {
+  content: '';
+  position: absolute;
+  width: 70%; height: 30%;
+  left: 15%; top: 22%;
+  background: rgba(0,0,0,0.85);
+  border-radius: 50% 50% 30% 30% / 60% 60% 30% 30%;
+  box-shadow: 0 4px 4px rgba(0,0,0,0.4);
+}
+.driver-card .helmet::before {
+  content: '';
+  position: absolute;
+  width: 6px; height: 8px;
+  left: 18px; top: 18px;
+  background: rgba(255,255,255,0.7);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.cta-row {
+  margin-top: clamp(28px, 5vh, 60px);
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+
+/* ---------- 3D CAR VIEW ---------- */
+.car-stage {
+  flex: 1;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  min-height: 0;
+  margin-top: 12px;
+}
+.car-canvas {
+  position: relative;
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(0, 215, 182, 0.06), transparent 60%),
+    linear-gradient(180deg, #0a0a0c 0%, #050507 100%);
+  border: 1px solid var(--ink-faint);
+  overflow: hidden;
+  min-height: 420px;
+}
+.car-canvas canvas { display: block; width: 100%; height: 100%; }
+.car-canvas .hud {
+  position: absolute; top: 16px; left: 18px;
+  font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.car-canvas .hud .ttl { color: var(--ink); font-weight: 600; }
+.car-canvas .hud .ttl .acc { color: var(--team-color, var(--accent)); }
+.car-canvas .hud .sub { margin-top: 4px; }
+.car-canvas .footer-hint {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--ink-muted);
+  display: flex; gap: 18px; align-items: center;
+  pointer-events: none;
+}
+.car-canvas .footer-hint .kbd {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--ghost-bd);
+  border-radius: 6px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  background: var(--ghost-bg);
+  color: var(--ink);
+}
+
+.parts-panel {
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--ink-faint);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.parts-panel .head {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--ink-faint);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.parts-panel .head .ttl { color: var(--ink); font-weight: 600; }
+.parts-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+.parts-list::-webkit-scrollbar { width: 6px; }
+.parts-list::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 3px; }
+.part-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.part-row:hover { background: var(--ghost-bg); }
+.part-row.active { background: var(--ghost-bg); border-left-color: var(--team-color, var(--accent)); }
+.part-row .idx { font-size: 10px; color: var(--ink-muted); font-feature-settings: 'tnum'; }
+.part-row .label { font-size: 13px; font-weight: 500; }
+.part-row .arrow { font-size: 14px; color: var(--ink-muted); }
+
+/* ---------- SEASON STRIP ---------- */
+.season-strip {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.season-strip::-webkit-scrollbar { height: 4px; }
+.season-strip::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 2px; }
+.race-card {
+  flex: 0 0 auto;
+  min-width: 200px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--ink-faint);
+  scroll-snap-align: start;
+  position: relative;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.race-card .rh { font-size: 10px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; }
+.race-card .rn { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.race-card .rd { font-size: 11px; color: var(--ink-muted); }
+.race-card .status {
+  margin-top: 8px;
+  font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  width: fit-content;
+  font-weight: 600;
+}
+.race-card.done .status { color: var(--ok); background: rgba(70, 211, 154, 0.1); }
+.race-card.upcoming .status { color: var(--ink-muted); background: var(--ghost-bg); }
+.race-card.next .status { color: var(--accent); background: rgba(0, 215, 182, 0.12); }
+.race-card.upcoming { opacity: 0.7; }
+.race-card .podium {
+  margin-top: 8px;
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.race-card .podium .p { display: flex; gap: 8px; align-items: baseline; }
+.race-card .podium .p .pos { color: var(--ink); font-weight: 600; min-width: 14px; font-feature-settings: 'tnum'; }
+
+/* ---------- PART DETAIL SHEET ---------- */
+.sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--ghost-bd);
+  border-radius: 22px 22px 0 0;
+  padding: 28px clamp(20px, 4vw, 56px) 32px;
+  transform: translateY(100%);
+  transition: transform var(--t-med) var(--ease);
+  z-index: 50;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 -20px 60px rgba(0,0,0,0.6);
+}
+.sheet.open { transform: translateY(0); }
+.sheet .handle {
+  width: 38px; height: 4px;
+  background: var(--ink-faint);
+  border-radius: 2px;
+  margin: -10px auto 18px;
+}
+.sheet .grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: clamp(20px, 4vw, 40px);
+  align-items: start;
+}
+.sheet .tag {
+  display: inline-block;
+  font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--team-color, var(--accent));
+  color: #000;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.sheet h2 { font-size: clamp(28px, 4vw, 48px); font-weight: 700; line-height: 1; letter-spacing: -0.02em; margin-bottom: 12px; }
+.sheet p.desc { font-size: 15px; color: var(--ink-muted); line-height: 1.6; max-width: 56ch; }
+.sheet .specs { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.sheet .spec {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 16px;
+  font-size: 13px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ink-faint);
+}
+.sheet .spec .k { color: var(--ink-muted); letter-spacing: 0.1em; text-transform: uppercase; font-size: 11px; }
+.sheet .spec .v { color: var(--ink); }
+.sheet .impact {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--ghost-bg);
+  border: 1px solid var(--ink-faint);
+}
+.sheet .impact .k { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 6px; }
+.sheet .impact .v { font-size: 14px; line-height: 1.55; }
+.sheet .regcite {
+  margin-top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.sheet .regcite .pin { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+.sheet .close-row { display: flex; justify-content: flex-end; margin-top: 16px; }
+
+/* ---------- HELPERS ---------- */
+.spacer { flex: 1; }
+.hidden { display: none !important; }
+.fade-in { animation: fadeIn var(--t-slow) var(--ease) both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 960px) {
+  .car-stage { grid-template-columns: 1fr; }
+  .parts-panel { max-height: 280px; }
+  .team-hero { grid-template-columns: 1fr; }
+  .driver-row { grid-template-columns: 1fr; }
+  .sheet .grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .topbar .nav { gap: 14px; }
+  .topbar .meta { display: none; }
+  .team-grid { grid-template-columns: 1fr 1fr; }
+  .hero h1 { font-size: 36px; }
+  .car-canvas { min-height: 320px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span>F1 · 2026 REGULATION ERA</span>
+    </div>
+    <nav class="nav" id="topnav">
+      <button data-go="teams" disabled>TEAMS</button>
+      <button data-go="season" disabled>SEASON</button>
+    </nav>
+    <div class="meta">
+      <span class="pill" id="roundPill">R5 / R22</span>
+      <span class="pill" id="livePill">●&nbsp;LIVE DATA</span>
+    </div>
+  </header>
+
+  <!-- SCREEN: SPLASH -->
+  <section class="screen" id="screen-splash" data-screen="splash">
+    <div class="spacer"></div>
+    <div class="year">2026</div>
+    <div class="big">A NEW ERA<br/>OF FORMULA 1</div>
+    <div class="tag">ACTIVE AERO · 50% ELECTRIC · 100% SUSTAINABLE FUEL</div>
+    <div class="splash-bar"></div>
+    <div class="spacer"></div>
+  </section>
+
+  <!-- SCREEN: TEAMS -->
+  <section class="screen" id="screen-teams" data-screen="teams">
+    <div class="hero">
+      <h1>Pick a<br/>constructor. <em>Then a car.</em></h1>
+      <p class="lede">Eleven teams, twenty-two drivers, one rulebook rewritten from scratch. Tap a team to see the car, the drivers, the season so far — and which 2026 technical regulation makes them fast.</p>
+      <div class="quick">
+        <div class="stat"><div class="k">RACES RUN</div><div class="v" id="statRaces">5</div></div>
+        <div class="stat"><div class="k">LEADER</div><div class="v" id="statLeader">Antonelli</div></div>
+        <div class="stat"><div class="k">POLE SITTOS</div><div class="v">Live</div></div>
+        <div class="stat"><div class="k">REG REWRITE</div><div class="v">+ 70%</div></div>
+      </div>
+    </div>
+    <div class="team-grid-wrap">
+      <div class="section-head">
+        <h2>CONSTRUCTORS · 2026</h2>
+        <span id="teamCount">11 TEAMS</span>
+      </div>
+      <div class="team-grid" id="teamGrid"></div>
+    </div>
+  </section>
+
+  <!-- SCREEN: TEAM DETAIL -->
+  <section class="screen" id="screen-team" data-screen="team">
+    <div class="team-hero">
+      <div class="crest" id="teamCrest">
+        <div class="tag" id="teamCrestTag">FORMULA 1 · 2026</div>
+        <div class="num" id="teamCrestNum">01</div>
+      </div>
+      <div>
+        <div class="name"><span id="teamName">—</span><span class="yr">·26</span></div>
+        <div class="meta">
+          <span><b id="teamNat">—</b></span>
+          <span>CONSTRUCTOR</span>
+          <span>SEASON <b id="teamPts">0</b> PTS</span>
+        </div>
+      </div>
+    </div>
+    <div class="driver-row" id="driverRow"></div>
+    <div class="cta-row">
+      <button class="btn-ghost" id="exploreBtn">EXPLORE THE CAR <span class="arrow">→</span></button>
+      <button class="btn-ghost" data-go="teams">← ALL TEAMS</button>
+    </div>
+  </section>
+
+  <!-- SCREEN: CAR 3D -->
+  <section class="screen" id="screen-car" data-screen="car">
+    <div class="car-stage">
+      <div class="car-canvas" id="carCanvas">
+        <div class="hud">
+          <div class="ttl"><span class="acc" id="hudTeam">MERCEDES</span> · W17 BASELINE</div>
+          <div class="sub">2026 TECHNICAL REGULATION REFERENCE</div>
+        </div>
+        <div class="footer-hint">
+          <span><span class="kbd">DRAG</span> ORBIT</span>
+          <span><span class="kbd">SCROLL</span> ZOOM</span>
+          <span><span class="kbd">TAP PART</span> DETAIL</span>
+        </div>
+      </div>
+      <aside class="parts-panel">
+        <div class="head">
+          <span class="ttl">13 PARTS</span>
+          <span>FIA 2026 TECH REGS</span>
+        </div>
+        <div class="parts-list" id="partsList"></div>
+      </aside>
+    </div>
+    <div class="section-head" style="margin-top: 24px;">
+      <h2>2026 SEASON · R1–R22</h2>
+      <span>5 RACED · 17 UPCOMING</span>
+    </div>
+    <div class="season-strip" id="seasonStrip"></div>
+    <div class="cta-row" style="margin-top: 24px;">
+      <button class="btn-ghost" id="backToTeamBtn">← BACK TO TEAM</button>
+    </div>
+  </section>
+</div>
+
+<!-- PART DETAIL SHEET -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="handle"></div>
+  <div class="grid">
+    <div>
+      <span class="tag" id="sheetTag">—</span>
+      <h2 id="sheetTitle">—</h2>
+      <p class="desc" id="sheetDesc">—</p>
+      <div class="specs" id="sheetSpecs"></div>
+    </div>
+    <div>
+      <div class="impact">
+        <div class="k">PERFORMANCE IMPACT</div>
+        <div class="v" id="sheetImpact">—</div>
+      </div>
+      <div class="regcite">
+        <span class="pin"></span>
+        <span id="sheetReg">—</span>
+      </div>
+      <div class="close-row">
+        <button class="btn-ghost" id="sheetClose">CLOSE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://esm.sh/three@0.160.0"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* =========================================================
+   F1 2026 Viewer — inline runtime.
+   Single self-contained file: no build step, no node_modules.
+   Data is fetched from ./data/*.json (served as static files).
+   ========================================================= */
+
+/* ---------- DATA LAYER (inlined — no fetch needed) ----------
+   These come from the cached ./data/*.json files. Inlining them
+   removes a network round-trip on first paint and makes the
+   app work over file:// too. The JSON files are still served
+   for transparency / future refresh. */
+
+
+
+
+
+
+
+/* Team colors per the SPEC. These are real 2026 team liveries. */
+const TEAM_COLORS = {
+  mercedes:    '#00D7B6',
+  ferrari:     '#DC0000',
+  red_bull:    '#1E40AF',
+  mclaren:     '#FF8000',
+  aston_martin:'#006F62',
+  alpine:      '#0090D2',
+  williams:    '#005AFF',
+  rb:          '#6692FF',
+  audi:        '#BB1E1E',
+  haas:        '#B6BABD',
+  cadillac:    '#C9A961',
+};
+
+/* Map constructorId -> helmet primary color (publicly known 2026 helmet liveries) */
+const HELMET_COLORS = {
+  mercedes:    '#00D7B6',
+  ferrari:     '#DC0000',
+  red_bull:    '#1E40AF',
+  mclaren:     '#FF8000',
+  aston_martin:'#006F62',
+  alpine:      '#0090D2',
+  williams:    '#005AFF',
+  rb:          '#6692FF',
+  audi:        '#BB1E1E',
+  haas:        '#B6BABD',
+  cadillac:    '#1A1A1A',
+};
+
+/* 12 regulation-correct 2026 car parts, with FIA citation + impact note. */
+const PARTS = [
+  { id:'frontWing',  name:'Front Wing',        pos:[-2.0,  0.00,  0.0], size:[0.2, 0.05, 1.6], color:0x222233, regulation:'FIA Tech Regs Art. 3.9',  spec:'2-element cascade, narrower than 2024',           impact:'Sets front-end aero balance; ~30% of total drag produced here. 2026 rewrite moves inwash toward the floor to feed the underbody.' },
+  { id:'rearWing',   name:'Rear Wing',         pos:[ 1.9,  0.45,  0.0], size:[0.15,0.45, 1.0], color:0x222233, regulation:'FIA Tech Regs Art. 3.10', spec:'Active aero X-Mode + Z-Mode',                       impact:'+15–20 km/h on straights in Z-Mode; X-Mode for high-downforce sectors. Replaces DRS.' },
+  { id:'floor',      name:'Floor',             pos:[ 0.0, -0.30,  0.0], size:[4.0, 0.05, 1.5], color:0x1a1a22, regulation:'FIA Tech Regs Art. 3.13', spec:'Edge-wing style, stronger ground effect',           impact:'Primary downforce source. 2026 cars are ~30 kg lighter overall but generate similar total DF to 2024.' },
+  { id:'sidepodL',   name:'Left Sidepod',      pos:[ 0.0,  0.15,  0.75],size:[2.4, 0.5,  0.3], color:0x222233, regulation:'FIA Tech Regs Art. 3.15', spec:'Slimmer than 2024, new side intrusion panels',     impact:'Reduces drag, shifts cooling duties to the floor. McLaren-style "tapered" sidepods are no longer possible under the new rules.' },
+  { id:'sidepodR',   name:'Right Sidepod',     pos:[ 0.0,  0.15, -0.75],size:[2.4, 0.5,  0.3], color:0x222233, regulation:'FIA Tech Regs Art. 3.15', spec:'Slimmer than 2024, new side intrusion panels',     impact:'Reduces drag, shifts cooling duties to the floor. Symmetric to left.' },
+  { id:'halo',       name:'Halo',              pos:[-0.3,  0.65,  0.0], size:[0.6, 0.05, 0.8], color:0x444450, regulation:'FIA Tech Regs Art. 12',   spec:'Titanium, 9.5 kg FIA minimum',                       impact:'Survival cell, mandated since 2018. No aero impact; integrated headrest fairing in 2026.' },
+  { id:'nose',       name:'Nose',              pos:[-1.6,  0.15,  0.0], size:[0.8, 0.15, 0.3], color:0x222233, regulation:'FIA Tech Regs Art. 3.7',  spec:'Slimmer, lower, integrated with front wing',        impact:'Reduces drag, improves airflow to the floor edge.' },
+  { id:'suspF',      name:'Front Suspension',  pos:[-0.9,  0.25,  0.5], size:[0.4, 0.4,  0.1], color:0x666677, regulation:'FIA Tech Regs Art. 10',   spec:'Push-rod or pull-rod allowed',                      impact:'Affects front-end feel and the wake the floor sees. Mercedes & Red Bull are known pull-rod users.' },
+  { id:'suspR',      name:'Rear Suspension',   pos:[ 1.3,  0.30,  0.5], size:[0.4, 0.4,  0.1], color:0x666677, regulation:'FIA Tech Regs Art. 10',   spec:'Pull-rod preferred for low CG',                     impact:'Affects rear stability and diffuser flow. Pull-rod is aerodynamically superior for 2026 regs.' },
+  { id:'powerUnit',  name:'Power Unit',        pos:[ 0.4,  0.10,  0.0], size:[1.8, 0.4,  0.7], color:0x1a1a22, regulation:'FIA Tech Regs Art. 5',    spec:'1.6L V6 turbo + 50% electric MGU-K (350 kW cap)',   impact:'Total ~1000 HP equivalent. The new 50/50 ICE-electric split means ~550 HP from the V6, ~450 HP from the K.' },
+  { id:'battery',    name:'Battery / MGU-K',   pos:[ 0.0,  0.40,  0.0], size:[1.2, 0.2,  0.5], color:0x884400, regulation:'FIA Tech Regs Art. 5.4',  spec:'Lithium-ion, higher energy density for 50% electric', impact:'Powers MGU-K, ~120 kW deployed per lap. Recovery zones on straights, deployment on exit.' },
+  { id:'brakeDuct',  name:'Brake Duct',        pos:[-0.9,  0.05,  0.5], size:[0.3, 0.3,  0.3], color:0x333344, regulation:'FIA Tech Regs Art. 11',   spec:'Integrated with bodywork, regulates brake temp',    impact:'Critical for tyre management. 2026 cars run hotter brakes to keep tyre temps in the operating window.' },
+  { id:'diffuser',   name:'Diffuser',          pos:[ 1.9, -0.20,  0.0], size:[0.4, 0.25, 1.2], color:0x222233, regulation:'FIA Tech Regs Art. 3.14', spec:'Wider, more aggressive ramp angles',                impact:'Extracts underfloor airflow, adds downforce at speed. 2026 regs allow taller diffuser entries for more aggressive ramp angles.' },
+];
+
+const CONSTRUCTORS = [
+  {
+    "constructorId": "alpine",
+    "url": "https://en.wikipedia.org/wiki/Alpine_F1_Team",
+    "name": "Alpine F1 Team",
+    "nationality": "French"
+  },
+  {
+    "constructorId": "aston_martin",
+    "url": "https://en.wikipedia.org/wiki/Aston_Martin_in_Formula_One",
+    "name": "Aston Martin",
+    "nationality": "British"
+  },
+  {
+    "constructorId": "audi",
+    "url": "https://en.wikipedia.org/wiki/Audi_in_Formula_One",
+    "name": "Audi",
+    "nationality": "German"
+  },
+  {
+    "constructorId": "cadillac",
+    "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+    "name": "Cadillac F1 Team",
+    "nationality": "American"
+  },
+  {
+    "constructorId": "ferrari",
+    "url": "https://en.wikipedia.org/wiki/Scuderia_Ferrari",
+    "name": "Ferrari",
+    "nationality": "Italian"
+  },
+  {
+    "constructorId": "haas",
+    "url": "https://en.wikipedia.org/wiki/Haas_F1_Team",
+    "name": "Haas F1 Team",
+    "nationality": "American"
+  },
+  {
+    "constructorId": "mclaren",
+    "url": "https://en.wikipedia.org/wiki/McLaren",
+    "name": "McLaren",
+    "nationality": "British"
+  },
+  {
+    "constructorId": "mercedes",
+    "url": "https://en.wikipedia.org/wiki/Mercedes-Benz_in_Formula_One",
+    "name": "Mercedes",
+    "nationality": "German"
+  },
+  {
+    "constructorId": "rb",
+    "url": "https://en.wikipedia.org/wiki/Racing_Bulls",
+    "name": "RB F1 Team",
+    "nationality": "Italian"
+  },
+  {
+    "constructorId": "red_bull",
+    "url": "https://en.wikipedia.org/wiki/Red_Bull_Racing",
+    "name": "Red Bull",
+    "nationality": "Austrian"
+  },
+  {
+    "constructorId": "williams",
+    "url": "https://en.wikipedia.org/wiki/Williams_Racing",
+    "name": "Williams",
+    "nationality": "British"
+  }
+];
+
+const DRIVERS = [
+  {
+    "driverId": "albon",
+    "permanentNumber": "23",
+    "code": "ALB",
+    "url": "http://en.wikipedia.org/wiki/Alexander_Albon",
+    "givenName": "Alexander",
+    "familyName": "Albon",
+    "dateOfBirth": "1996-03-23",
+    "nationality": "Thai"
+  },
+  {
+    "driverId": "alonso",
+    "permanentNumber": "14",
+    "code": "ALO",
+    "url": "http://en.wikipedia.org/wiki/Fernando_Alonso",
+    "givenName": "Fernando",
+    "familyName": "Alonso",
+    "dateOfBirth": "1981-07-29",
+    "nationality": "Spanish"
+  },
+  {
+    "driverId": "antonelli",
+    "permanentNumber": "12",
+    "code": "ANT",
+    "url": "https://en.wikipedia.org/wiki/Andrea_Kimi_Antonelli",
+    "givenName": "Andrea Kimi",
+    "familyName": "Antonelli",
+    "dateOfBirth": "2006-08-25",
+    "nationality": "Italian"
+  },
+  {
+    "driverId": "bearman",
+    "permanentNumber": "87",
+    "code": "BEA",
+    "url": "http://en.wikipedia.org/wiki/Oliver_Bearman",
+    "givenName": "Oliver",
+    "familyName": "Bearman",
+    "dateOfBirth": "2005-05-08",
+    "nationality": "British"
+  },
+  {
+    "driverId": "bortoleto",
+    "permanentNumber": "5",
+    "code": "BOR",
+    "url": "https://en.wikipedia.org/wiki/Gabriel_Bortoleto",
+    "givenName": "Gabriel",
+    "familyName": "Bortoleto",
+    "dateOfBirth": "2004-10-14",
+    "nationality": "Brazilian"
+  },
+  {
+    "driverId": "bottas",
+    "permanentNumber": "77",
+    "code": "BOT",
+    "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+    "givenName": "Valtteri",
+    "familyName": "Bottas",
+    "dateOfBirth": "1989-08-28",
+    "nationality": "Finnish"
+  },
+  {
+    "driverId": "colapinto",
+    "permanentNumber": "43",
+    "code": "COL",
+    "url": "http://en.wikipedia.org/wiki/Franco_Colapinto",
+    "givenName": "Franco",
+    "familyName": "Colapinto",
+    "dateOfBirth": "2003-05-27",
+    "nationality": "Argentine"
+  },
+  {
+    "driverId": "jak_crawford",
+    "givenName": "Jak",
+    "familyName": "Crawford"
+  },
+  {
+    "driverId": "gasly",
+    "permanentNumber": "10",
+    "code": "GAS",
+    "url": "http://en.wikipedia.org/wiki/Pierre_Gasly",
+    "givenName": "Pierre",
+    "familyName": "Gasly",
+    "dateOfBirth": "1996-02-07",
+    "nationality": "French"
+  },
+  {
+    "driverId": "hadjar",
+    "permanentNumber": "6",
+    "code": "HAD",
+    "url": "https://en.wikipedia.org/wiki/Isack_Hadjar",
+    "givenName": "Isack",
+    "familyName": "Hadjar",
+    "dateOfBirth": "2004-09-28",
+    "nationality": "French"
+  },
+  {
+    "driverId": "hamilton",
+    "permanentNumber": "44",
+    "code": "HAM",
+    "url": "http://en.wikipedia.org/wiki/Lewis_Hamilton",
+    "givenName": "Lewis",
+    "familyName": "Hamilton",
+    "dateOfBirth": "1985-01-07",
+    "nationality": "British"
+  },
+  {
+    "driverId": "hulkenberg",
+    "permanentNumber": "27",
+    "code": "HUL",
+    "url": "http://en.wikipedia.org/wiki/Nico_H%C3%BClkenberg",
+    "givenName": "Nico",
+    "familyName": "H\u00fclkenberg",
+    "dateOfBirth": "1987-08-19",
+    "nationality": "German"
+  },
+  {
+    "driverId": "lawson",
+    "permanentNumber": "30",
+    "code": "LAW",
+    "url": "http://en.wikipedia.org/wiki/Liam_Lawson",
+    "givenName": "Liam",
+    "familyName": "Lawson",
+    "dateOfBirth": "2002-02-11",
+    "nationality": "New Zealander"
+  },
+  {
+    "driverId": "leclerc",
+    "permanentNumber": "16",
+    "code": "LEC",
+    "url": "http://en.wikipedia.org/wiki/Charles_Leclerc",
+    "givenName": "Charles",
+    "familyName": "Leclerc",
+    "dateOfBirth": "1997-10-16",
+    "nationality": "Monegasque"
+  },
+  {
+    "driverId": "arvid_lindblad",
+    "permanentNumber": "41",
+    "code": "LIN",
+    "url": "https://en.wikipedia.org/wiki/Arvid_Lindblad",
+    "givenName": "Arvid",
+    "familyName": "Lindblad",
+    "dateOfBirth": "2007-08-08",
+    "nationality": "British"
+  },
+  {
+    "driverId": "norris",
+    "permanentNumber": "1",
+    "code": "NOR",
+    "url": "http://en.wikipedia.org/wiki/Lando_Norris",
+    "givenName": "Lando",
+    "familyName": "Norris",
+    "dateOfBirth": "1999-11-13",
+    "nationality": "British"
+  },
+  {
+    "driverId": "ocon",
+    "permanentNumber": "31",
+    "code": "OCO",
+    "url": "http://en.wikipedia.org/wiki/Esteban_Ocon",
+    "givenName": "Esteban",
+    "familyName": "Ocon",
+    "dateOfBirth": "1996-09-17",
+    "nationality": "French"
+  },
+  {
+    "driverId": "piastri",
+    "permanentNumber": "81",
+    "code": "PIA",
+    "url": "http://en.wikipedia.org/wiki/Oscar_Piastri",
+    "givenName": "Oscar",
+    "familyName": "Piastri",
+    "dateOfBirth": "2001-04-06",
+    "nationality": "Australian"
+  },
+  {
+    "driverId": "perez",
+    "permanentNumber": "11",
+    "code": "PER",
+    "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+    "givenName": "Sergio",
+    "familyName": "P\u00e9rez",
+    "dateOfBirth": "1990-01-26",
+    "nationality": "Mexican"
+  },
+  {
+    "driverId": "russell",
+    "permanentNumber": "63",
+    "code": "RUS",
+    "url": "http://en.wikipedia.org/wiki/George_Russell_(racing_driver)",
+    "givenName": "George",
+    "familyName": "Russell",
+    "dateOfBirth": "1998-02-15",
+    "nationality": "British"
+  },
+  {
+    "driverId": "sainz",
+    "permanentNumber": "55",
+    "code": "SAI",
+    "url": "http://en.wikipedia.org/wiki/Carlos_Sainz_Jr.",
+    "givenName": "Carlos",
+    "familyName": "Sainz",
+    "dateOfBirth": "1994-09-01",
+    "nationality": "Spanish"
+  },
+  {
+    "driverId": "stroll",
+    "permanentNumber": "18",
+    "code": "STR",
+    "url": "http://en.wikipedia.org/wiki/Lance_Stroll",
+    "givenName": "Lance",
+    "familyName": "Stroll",
+    "dateOfBirth": "1998-10-29",
+    "nationality": "Canadian"
+  },
+  {
+    "driverId": "max_verstappen",
+    "permanentNumber": "3",
+    "code": "VER",
+    "url": "http://en.wikipedia.org/wiki/Max_Verstappen",
+    "givenName": "Max",
+    "familyName": "Verstappen",
+    "dateOfBirth": "1997-09-30",
+    "nationality": "Dutch"
+  }
+];
+
+const DRIVER_TEAM = {
+  "antonelli": "mercedes",
+  "hamilton": "ferrari",
+  "max_verstappen": "red_bull",
+  "leclerc": "ferrari",
+  "hadjar": "red_bull",
+  "colapinto": "alpine",
+  "lawson": "rb",
+  "gasly": "alpine",
+  "sainz": "williams",
+  "bearman": "haas",
+  "piastri": "mclaren",
+  "hulkenberg": "audi",
+  "bortoleto": "audi",
+  "ocon": "haas",
+  "stroll": "aston_martin",
+  "bottas": "cadillac",
+  "perez": "cadillac",
+  "norris": "mclaren",
+  "russell": "mercedes",
+  "alonso": "aston_martin",
+  "albon": "williams",
+  "arvid_lindblad": "rb"
+};
+
+const SEASON = [
+  {
+    "season": "2026",
+    "round": "1",
+    "url": "https://en.wikipedia.org/wiki/2026_Australian_Grand_Prix",
+    "raceName": "Australian Grand Prix",
+    "Circuit": {
+      "circuitId": "albert_park",
+      "url": "https://en.wikipedia.org/wiki/Albert_Park_Circuit",
+      "circuitName": "Albert Park Grand Prix Circuit",
+      "Location": {
+        "lat": "-37.8497",
+        "long": "144.968",
+        "locality": "Melbourne",
+        "country": "Australia"
+      }
+    },
+    "date": "2026-03-08",
+    "time": "04:00:00Z",
+    "FirstPractice": {
+      "date": "2026-03-06",
+      "time": "01:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-03-06",
+      "time": "05:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-03-07",
+      "time": "01:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-03-07",
+      "time": "05:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "2",
+    "url": "https://en.wikipedia.org/wiki/2026_Chinese_Grand_Prix",
+    "raceName": "Chinese Grand Prix",
+    "Circuit": {
+      "circuitId": "shanghai",
+      "url": "https://en.wikipedia.org/wiki/Shanghai_International_Circuit",
+      "circuitName": "Shanghai International Circuit",
+      "Location": {
+        "lat": "31.3389",
+        "long": "121.22",
+        "locality": "Shanghai",
+        "country": "China"
+      }
+    },
+    "date": "2026-03-15",
+    "time": "07:00:00Z",
+    "FirstPractice": {
+      "date": "2026-03-13",
+      "time": "03:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-03-14",
+      "time": "07:00:00Z"
+    },
+    "Sprint": {
+      "date": "2026-03-14",
+      "time": "03:00:00Z"
+    },
+    "SprintQualifying": {
+      "date": "2026-03-13",
+      "time": "07:30:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "3",
+    "url": "https://en.wikipedia.org/wiki/2026_Japanese_Grand_Prix",
+    "raceName": "Japanese Grand Prix",
+    "Circuit": {
+      "circuitId": "suzuka",
+      "url": "https://en.wikipedia.org/wiki/Suzuka_International_Racing_Course",
+      "circuitName": "Suzuka Circuit",
+      "Location": {
+        "lat": "34.8431",
+        "long": "136.541",
+        "locality": "Suzuka",
+        "country": "Japan"
+      }
+    },
+    "date": "2026-03-29",
+    "time": "05:00:00Z",
+    "FirstPractice": {
+      "date": "2026-03-27",
+      "time": "02:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-03-27",
+      "time": "06:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-03-28",
+      "time": "02:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-03-28",
+      "time": "06:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "4",
+    "url": "https://en.wikipedia.org/wiki/2026_Miami_Grand_Prix",
+    "raceName": "Miami Grand Prix",
+    "Circuit": {
+      "circuitId": "miami",
+      "url": "https://en.wikipedia.org/wiki/Miami_International_Autodrome",
+      "circuitName": "Miami International Autodrome",
+      "Location": {
+        "lat": "25.9581",
+        "long": "-80.2389",
+        "locality": "Miami",
+        "country": "USA"
+      }
+    },
+    "date": "2026-05-03",
+    "time": "20:00:00Z",
+    "FirstPractice": {
+      "date": "2026-05-01",
+      "time": "16:00:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-05-02",
+      "time": "20:00:00Z"
+    },
+    "Sprint": {
+      "date": "2026-05-02",
+      "time": "16:00:00Z"
+    },
+    "SprintQualifying": {
+      "date": "2026-05-01",
+      "time": "20:30:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "5",
+    "url": "https://en.wikipedia.org/wiki/2026_Canadian_Grand_Prix",
+    "raceName": "Canadian Grand Prix",
+    "Circuit": {
+      "circuitId": "villeneuve",
+      "url": "https://en.wikipedia.org/wiki/Circuit_Gilles_Villeneuve",
+      "circuitName": "Circuit Gilles Villeneuve",
+      "Location": {
+        "lat": "45.5",
+        "long": "-73.5228",
+        "locality": "Montreal",
+        "country": "Canada"
+      }
+    },
+    "date": "2026-05-24",
+    "time": "20:00:00Z",
+    "FirstPractice": {
+      "date": "2026-05-22",
+      "time": "16:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-05-23",
+      "time": "20:00:00Z"
+    },
+    "Sprint": {
+      "date": "2026-05-23",
+      "time": "16:00:00Z"
+    },
+    "SprintQualifying": {
+      "date": "2026-05-22",
+      "time": "20:30:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "6",
+    "url": "https://en.wikipedia.org/wiki/2026_Monaco_Grand_Prix",
+    "raceName": "Monaco Grand Prix",
+    "Circuit": {
+      "circuitId": "monaco",
+      "url": "https://en.wikipedia.org/wiki/Circuit_de_Monaco",
+      "circuitName": "Circuit de Monaco",
+      "Location": {
+        "lat": "43.7347",
+        "long": "7.42056",
+        "locality": "Monte Carlo",
+        "country": "Monaco"
+      }
+    },
+    "date": "2026-06-07",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-06-05",
+      "time": "11:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-06-05",
+      "time": "15:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-06-06",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-06-06",
+      "time": "14:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "7",
+    "url": "https://en.wikipedia.org/wiki/2026_Barcelona-Catalunya",
+    "raceName": "Barcelona Grand Prix",
+    "Circuit": {
+      "circuitId": "catalunya",
+      "url": "https://en.wikipedia.org/wiki/Circuit_de_Barcelona-Catalunya",
+      "circuitName": "Circuit de Barcelona-Catalunya",
+      "Location": {
+        "lat": "41.57",
+        "long": "2.26111",
+        "locality": "Barcelona",
+        "country": "Spain"
+      }
+    },
+    "date": "2026-06-14",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-06-12",
+      "time": "11:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-06-12",
+      "time": "15:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-06-13",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-06-13",
+      "time": "14:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "8",
+    "url": "https://en.wikipedia.org/wiki/2026_Austrian_Grand_Prix",
+    "raceName": "Austrian Grand Prix",
+    "Circuit": {
+      "circuitId": "red_bull_ring",
+      "url": "https://en.wikipedia.org/wiki/Red_Bull_Ring",
+      "circuitName": "Red Bull Ring",
+      "Location": {
+        "lat": "47.2197",
+        "long": "14.7647",
+        "locality": "Spielberg",
+        "country": "Austria"
+      }
+    },
+    "date": "2026-06-28",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-06-26",
+      "time": "11:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-06-26",
+      "time": "15:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-06-27",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-06-27",
+      "time": "14:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "9",
+    "url": "https://en.wikipedia.org/wiki/2026_British_Grand_Prix",
+    "raceName": "British Grand Prix",
+    "Circuit": {
+      "circuitId": "silverstone",
+      "url": "https://en.wikipedia.org/wiki/Silverstone_Circuit",
+      "circuitName": "Silverstone Circuit",
+      "Location": {
+        "lat": "52.0786",
+        "long": "-1.01694",
+        "locality": "Silverstone",
+        "country": "UK"
+      }
+    },
+    "date": "2026-07-05",
+    "time": "14:00:00Z",
+    "FirstPractice": {
+      "date": "2026-07-03",
+      "time": "11:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-07-04",
+      "time": "15:00:00Z"
+    },
+    "Sprint": {
+      "date": "2026-07-04",
+      "time": "11:00:00Z"
+    },
+    "SprintQualifying": {
+      "date": "2026-07-03",
+      "time": "15:30:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "10",
+    "url": "https://en.wikipedia.org/wiki/2026_Belgian_Grand_Prix",
+    "raceName": "Belgian Grand Prix",
+    "Circuit": {
+      "circuitId": "spa",
+      "url": "https://en.wikipedia.org/wiki/Circuit_de_Spa-Francorchamps",
+      "circuitName": "Circuit de Spa-Francorchamps",
+      "Location": {
+        "lat": "50.4372",
+        "long": "5.97139",
+        "locality": "Spa",
+        "country": "Belgium"
+      }
+    },
+    "date": "2026-07-19",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-07-17",
+      "time": "11:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-07-17",
+      "time": "15:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-07-18",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-07-18",
+      "time": "14:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "11",
+    "url": "https://en.wikipedia.org/wiki/2026_Hungarian_Grand_Prix",
+    "raceName": "Hungarian Grand Prix",
+    "Circuit": {
+      "circuitId": "hungaroring",
+      "url": "https://en.wikipedia.org/wiki/Hungaroring",
+      "circuitName": "Hungaroring",
+      "Location": {
+        "lat": "47.5789",
+        "long": "19.2486",
+        "locality": "Budapest",
+        "country": "Hungary"
+      }
+    },
+    "date": "2026-07-26",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-07-24",
+      "time": "11:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-07-24",
+      "time": "15:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-07-25",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-07-25",
+      "time": "14:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "12",
+    "url": "https://en.wikipedia.org/wiki/2026_Dutch_Grand_Prix",
+    "raceName": "Dutch Grand Prix",
+    "Circuit": {
+      "circuitId": "zandvoort",
+      "url": "https://en.wikipedia.org/wiki/Circuit_Zandvoort",
+      "circuitName": "Circuit Park Zandvoort",
+      "Location": {
+        "lat": "52.3888",
+        "long": "4.54092",
+        "locality": "Zandvoort",
+        "country": "Netherlands"
+      }
+    },
+    "date": "2026-08-23",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-08-21",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-08-22",
+      "time": "14:00:00Z"
+    },
+    "Sprint": {
+      "date": "2026-08-22",
+      "time": "10:00:00Z"
+    },
+    "SprintQualifying": {
+      "date": "2026-08-21",
+      "time": "14:30:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "13",
+    "url": "https://en.wikipedia.org/wiki/2026_Italian_Grand_Prix",
+    "raceName": "Italian Grand Prix",
+    "Circuit": {
+      "circuitId": "monza",
+      "url": "https://en.wikipedia.org/wiki/Monza_Circuit",
+      "circuitName": "Autodromo Nazionale di Monza",
+      "Location": {
+        "lat": "45.6156",
+        "long": "9.28111",
+        "locality": "Monza",
+        "country": "Italy"
+      }
+    },
+    "date": "2026-09-06",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-09-04",
+      "time": "10:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-09-04",
+      "time": "14:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-09-05",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-09-05",
+      "time": "14:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "14",
+    "url": "https://en.wikipedia.org/wiki/2026_Spanish_Grand_Prix",
+    "raceName": "Spanish Grand Prix",
+    "Circuit": {
+      "circuitId": "madring",
+      "url": "https://en.wikipedia.org/wiki/Madring",
+      "circuitName": "Madring",
+      "Location": {
+        "lat": "40.46528",
+        "long": "-3.61528",
+        "locality": "Madrid",
+        "country": "Spain"
+      }
+    },
+    "date": "2026-09-13",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-09-11",
+      "time": "11:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-09-11",
+      "time": "15:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-09-12",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-09-12",
+      "time": "14:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "15",
+    "url": "https://en.wikipedia.org/wiki/2026_Azerbaijan_Grand_Prix",
+    "raceName": "Azerbaijan Grand Prix",
+    "Circuit": {
+      "circuitId": "baku",
+      "url": "https://en.wikipedia.org/wiki/Baku_City_Circuit",
+      "circuitName": "Baku City Circuit",
+      "Location": {
+        "lat": "40.3725",
+        "long": "49.8533",
+        "locality": "Baku",
+        "country": "Azerbaijan"
+      }
+    },
+    "date": "2026-09-26",
+    "time": "11:00:00Z",
+    "FirstPractice": {
+      "date": "2026-09-24",
+      "time": "08:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-09-24",
+      "time": "12:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-09-25",
+      "time": "08:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-09-25",
+      "time": "12:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "16",
+    "url": "https://en.wikipedia.org/wiki/2026_Singapore_Grand_Prix",
+    "raceName": "Singapore Grand Prix",
+    "Circuit": {
+      "circuitId": "marina_bay",
+      "url": "https://en.wikipedia.org/wiki/Marina_Bay_Street_Circuit",
+      "circuitName": "Marina Bay Street Circuit",
+      "Location": {
+        "lat": "1.2914",
+        "long": "103.864",
+        "locality": "Marina Bay",
+        "country": "Singapore"
+      }
+    },
+    "date": "2026-10-11",
+    "time": "12:00:00Z",
+    "FirstPractice": {
+      "date": "2026-10-09",
+      "time": "08:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-10-10",
+      "time": "13:00:00Z"
+    },
+    "Sprint": {
+      "date": "2026-10-10",
+      "time": "09:00:00Z"
+    },
+    "SprintQualifying": {
+      "date": "2026-10-09",
+      "time": "12:30:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "17",
+    "url": "https://en.wikipedia.org/wiki/2026_United_States_Grand_Prix",
+    "raceName": "United States Grand Prix",
+    "Circuit": {
+      "circuitId": "americas",
+      "url": "https://en.wikipedia.org/wiki/Circuit_of_the_Americas",
+      "circuitName": "Circuit of the Americas",
+      "Location": {
+        "lat": "30.1328",
+        "long": "-97.6411",
+        "locality": "Austin",
+        "country": "USA"
+      }
+    },
+    "date": "2026-10-25",
+    "time": "20:00:00Z",
+    "FirstPractice": {
+      "date": "2026-10-23",
+      "time": "17:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-10-23",
+      "time": "21:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-10-24",
+      "time": "17:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-10-24",
+      "time": "21:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "18",
+    "url": "https://en.wikipedia.org/wiki/2026_Mexico_City_Grand_Prix",
+    "raceName": "Mexico City Grand Prix",
+    "Circuit": {
+      "circuitId": "rodriguez",
+      "url": "https://en.wikipedia.org/wiki/Aut%C3%B3dromo_Hermanos_Rodr%C3%ADguez",
+      "circuitName": "Aut\u00f3dromo Hermanos Rodr\u00edguez",
+      "Location": {
+        "lat": "19.4042",
+        "long": "-99.0907",
+        "locality": "Mexico City",
+        "country": "Mexico"
+      }
+    },
+    "date": "2026-11-01",
+    "time": "20:00:00Z",
+    "FirstPractice": {
+      "date": "2026-10-30",
+      "time": "18:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-10-30",
+      "time": "22:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-10-31",
+      "time": "17:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-10-31",
+      "time": "21:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "19",
+    "url": "https://en.wikipedia.org/wiki/2026_Brazilian_Grand_Prix",
+    "raceName": "Brazilian Grand Prix",
+    "Circuit": {
+      "circuitId": "interlagos",
+      "url": "https://en.wikipedia.org/wiki/Interlagos_Circuit",
+      "circuitName": "Aut\u00f3dromo Jos\u00e9 Carlos Pace",
+      "Location": {
+        "lat": "-23.7036",
+        "long": "-46.6997",
+        "locality": "S\u00e3o Paulo",
+        "country": "Brazil"
+      }
+    },
+    "date": "2026-11-08",
+    "time": "17:00:00Z",
+    "FirstPractice": {
+      "date": "2026-11-06",
+      "time": "15:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-11-06",
+      "time": "19:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-11-07",
+      "time": "14:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-11-07",
+      "time": "18:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "20",
+    "url": "https://en.wikipedia.org/wiki/2026_Las_Vegas_Grand_Prix",
+    "raceName": "Las Vegas Grand Prix",
+    "Circuit": {
+      "circuitId": "vegas",
+      "url": "https://en.wikipedia.org/wiki/Las_Vegas_Grand_Prix#Circuit",
+      "circuitName": "Las Vegas Strip Street Circuit",
+      "Location": {
+        "lat": "36.1147",
+        "long": "-115.173",
+        "locality": "Las Vegas",
+        "country": "USA"
+      }
+    },
+    "date": "2026-11-22",
+    "time": "04:00:00Z",
+    "FirstPractice": {
+      "date": "2026-11-20",
+      "time": "00:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-11-20",
+      "time": "04:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-11-21",
+      "time": "00:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-11-21",
+      "time": "04:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "21",
+    "url": "https://en.wikipedia.org/wiki/2026_Qatar_Grand_Prix",
+    "raceName": "Qatar Grand Prix",
+    "Circuit": {
+      "circuitId": "losail",
+      "url": "https://en.wikipedia.org/wiki/Lusail_International_Circuit",
+      "circuitName": "Losail International Circuit",
+      "Location": {
+        "lat": "25.49",
+        "long": "51.4542",
+        "locality": "Lusail",
+        "country": "Qatar"
+      }
+    },
+    "date": "2026-11-29",
+    "time": "16:00:00Z",
+    "FirstPractice": {
+      "date": "2026-11-27",
+      "time": "13:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-11-27",
+      "time": "17:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-11-28",
+      "time": "14:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-11-28",
+      "time": "18:00:00Z"
+    }
+  },
+  {
+    "season": "2026",
+    "round": "22",
+    "url": "https://en.wikipedia.org/wiki/2026_Abu_Dhabi_Grand_Prix",
+    "raceName": "Abu Dhabi Grand Prix",
+    "Circuit": {
+      "circuitId": "yas_marina",
+      "url": "https://en.wikipedia.org/wiki/Yas_Marina_Circuit",
+      "circuitName": "Yas Marina Circuit",
+      "Location": {
+        "lat": "24.4672",
+        "long": "54.6031",
+        "locality": "Abu Dhabi",
+        "country": "UAE"
+      }
+    },
+    "date": "2026-12-06",
+    "time": "13:00:00Z",
+    "FirstPractice": {
+      "date": "2026-12-04",
+      "time": "09:30:00Z"
+    },
+    "SecondPractice": {
+      "date": "2026-12-04",
+      "time": "13:00:00Z"
+    },
+    "ThirdPractice": {
+      "date": "2026-12-05",
+      "time": "10:30:00Z"
+    },
+    "Qualifying": {
+      "date": "2026-12-05",
+      "time": "14:00:00Z"
+    }
+  }
+];
+
+const SEASON_SUMMARY = {
+  "r1": {
+    "round": 1,
+    "name": "Australian Grand Prix",
+    "date": "2026-03-08",
+    "circuit": "Albert Park Grand Prix Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      }
+    ]
+  },
+  "r2": {
+    "round": 2,
+    "name": "Chinese Grand Prix",
+    "date": "2026-03-15",
+    "circuit": "Shanghai International Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      }
+    ]
+  },
+  "r3": {
+    "round": 3,
+    "name": "Japanese Grand Prix",
+    "date": "2026-03-29",
+    "circuit": "Suzuka Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Piastri",
+        "team": "McLaren"
+      },
+      {
+        "pos": 3,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      }
+    ]
+  },
+  "r4": {
+    "round": 4,
+    "name": "Miami Grand Prix",
+    "date": "2026-05-03",
+    "circuit": "Miami International Autodrome",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Norris",
+        "team": "McLaren"
+      },
+      {
+        "pos": 3,
+        "driver": "Piastri",
+        "team": "McLaren"
+      }
+    ]
+  },
+  "r5": {
+    "round": 5,
+    "name": "Canadian Grand Prix",
+    "date": "2026-05-24",
+    "circuit": "Circuit Gilles Villeneuve",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 3,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      }
+    ]
+  }
+};
+
+
+/* ---------- STATE ---------- */
+const state = {
+  screen: 'splash',     // 'splash' | 'teams' | 'team' | 'car'
+  selectedTeam: null,   // constructorId
+  selectedPart: null,   // part id
+};
+
+/* ---------- UTILITIES ---------- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const age = (dob) => {
+  const d = new Date(dob);
+  const ageDifMs = Date.now() - d.getTime();
+  return Math.floor(ageDifMs / (1000 * 60 * 60 * 24 * 365.25));
+};
+const teamColor = (id) => TEAM_COLORS[id] || '#888';
+const helmetColor = (id) => HELMET_COLORS[id] || '#888';
+const driversForTeam = (constructorId) => DRIVERS.filter(d => DRIVER_TEAM[d.driverId] === constructorId);
+
+/* ---------- SCREEN ROUTING ---------- */
+function go(screen, params = {}) {
+  state.screen = screen;
+  if (params.team) state.selectedTeam = params.team;
+  if (params.part) state.selectedPart = params.part;
+  $$('.screen').forEach(el => el.classList.remove('active'));
+  const target = $(`#screen-${screen}`);
+  if (target) target.classList.add('active');
+  // Enable nav buttons except on splash
+  $$('#topnav button').forEach(b => b.disabled = (screen === 'splash'));
+  if (screen === 'teams') renderTeams();
+  if (screen === 'team')  renderTeamDetail();
+  if (screen === 'car')   renderCarView();
+  // Scroll to top on screen change
+  $('.stage').scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+
+/* ---------- SPLASH ---------- */
+let splashTimer = null;
+function startSplash() {
+  splashTimer = setTimeout(() => go('teams'), 1400);
+}
+
+/* ---------- TEAMS GRID ---------- */
+function renderTeams() {
+  const grid = $('#teamGrid');
+  grid.innerHTML = '';
+  CONSTRUCTORS.forEach((team, idx) => {
+    const drivers = driversForTeam(team.constructorId);
+    const leader = drivers[0];
+    const card = document.createElement('button');
+    card.className = 'team-card';
+    card.style.setProperty('--team-color', teamColor(team.constructorId));
+    card.innerHTML = `
+      <div>
+        <div class="name">${team.name}</div>
+        <div class="nat">${team.nationality}</div>
+      </div>
+      <div>
+        <div class="lead">
+          <span class="num">#${leader ? leader.permanentNumber : '?'}</span>
+          <span class="name">${leader ? leader.givenName + ' ' + leader.familyName : '—'}</span>
+        </div>
+        <div class="streak">${(idx+1).toString().padStart(2,'0')} / ${CONSTRUCTORS.length} · 2026</div>
+      </div>
+    `;
+    card.addEventListener('click', () => go('team', { team: team.constructorId }));
+    grid.appendChild(card);
+  });
+  $('#teamCount').textContent = `${CONSTRUCTORS.length} TEAMS · 2026`;
+  // Update live stats
+  const completedRaces = SEASON_SUMMARY ? Object.keys(SEASON_SUMMARY).length : 0;
+  $('#statRaces').textContent = completedRaces;
+  // Find current leader: who has the most wins in podium position 1?
+  const winCounts = {};
+  if (SEASON_SUMMARY) {
+    Object.values(SEASON_SUMMARY).forEach(r => {
+      if (r.podium && r.podium[0]) {
+        const name = r.podium[0].driver;
+        winCounts[name] = (winCounts[name] || 0) + 1;
+      }
+    });
+  }
+  const leader = Object.entries(winCounts).sort((a,b) => b[1]-a[1])[0];
+  $('#statLeader').textContent = leader ? `${leader[0]} (${leader[1]})` : '—';
+  $('#roundPill').textContent = `R${completedRaces} / 22`;
+}
+
+/* ---------- TEAM DETAIL ---------- */
+function renderTeamDetail() {
+  const team = CONSTRUCTORS.find(c => c.constructorId === state.selectedTeam);
+  if (!team) return;
+  const color = teamColor(team.constructorId);
+  const heroEl = $('.team-hero');
+  heroEl.style.setProperty('--team-color', color);
+  $('#teamName').textContent = team.name;
+  $('#teamNat').textContent = team.nationality;
+  $('#teamCrestTag').textContent = `FORMULA 1 · 2026 · ${team.nationality.toUpperCase()}`;
+  // Compute "rank" in the constructor order (1-based by index in CONSTRUCTORS)
+  const rank = CONSTRUCTORS.findIndex(c => c.constructorId === team.constructorId) + 1;
+  $('#teamCrestNum').textContent = rank.toString().padStart(2, '0');
+  // Drivers
+  const drivers = driversForTeam(team.constructorId);
+  const row = $('#driverRow');
+  row.innerHTML = '';
+  drivers.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'driver-card';
+    card.style.setProperty('--helmet-color', helmetColor(team.constructorId));
+    card.innerHTML = `
+      <div class="num">${d.permanentNumber}</div>
+      <div class="info">
+        <div class="name">${d.givenName} ${d.familyName}</div>
+        <div class="nat">${d.nationality} · ${d.code}</div>
+        <div class="age">${age(d.dateOfBirth)} yrs · DOB ${d.dateOfBirth}</div>
+      </div>
+      <div class="helmet" aria-label="helmet"></div>
+    `;
+    row.appendChild(card);
+  });
+  // Team points (sum from season results)
+  let pts = 0;
+  if (SEASON_SUMMARY) {
+    Object.values(SEASON_SUMMARY).forEach(r => {
+      if (r.podium) {
+        r.podium.forEach(p => {
+          if (p.team === team.name) {
+            pts += [25, 18, 15][p.pos - 1] || 0;
+          }
+        });
+      }
+    });
+  }
+  $('#teamPts').textContent = pts;
+  // Explore button
+  $('#exploreBtn').onclick = () => go('car');
+  // Back button (in cta row) uses data-go attr
+  $$('button[data-go="teams"]').forEach(b => b.onclick = () => go('teams'));
+}
+
+/* ---------- 3D CAR VIEW ---------- */
+let threeInited = false;
+let renderer, scene, camera, controls, car, partMeshes, hoveredPart;
+
+function initThree() {
+  if (threeInited) return;
+  const canvasWrap = $('#carCanvas');
+  const w = canvasWrap.clientWidth, h = canvasWrap.clientHeight;
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 8, 22);
+  camera = new THREE.PerspectiveCamera(35, w/h, 0.1, 100);
+  camera.position.set(5.5, 2.2, 6.5);
+  camera.lookAt(0, 0, 0);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  canvasWrap.appendChild(renderer.domElement);
+  // Lights — cinematic 3-point
+  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+  scene.add(ambient);
+  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  key.position.set(5, 8, 4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -6;
+  key.shadow.camera.right = 6;
+  key.shadow.camera.top = 6;
+  key.shadow.camera.bottom = -6;
+  key.shadow.bias = -0.0005;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x88aaff, 0.5);
+  rim.position.set(-4, 3, -3);
+  scene.add(rim);
+  const fill = new THREE.PointLight(0xffffff, 0.3);
+  fill.position.set(-3, 1, 4);
+  scene.add(fill);
+  // Ground plane
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 40),
+    new THREE.MeshStandardMaterial({ color: 0x050507, roughness: 0.95, metalness: 0.05 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.6;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  // Subtle grid
+  const grid = new THREE.GridHelper(20, 40, 0x222230, 0x111118);
+  grid.position.y = -0.59;
+  scene.add(grid);
+  // Build the car (regulation-correct primitive 2026 baseline)
+  car = new THREE.Group();
+  partMeshes = {};
+  PARTS.forEach(part => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: part.color,
+      roughness: 0.4,
+      metalness: 0.7,
+      emissive: 0x000000,
+    });
+    const geo = new THREE.BoxGeometry(...part.size);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(...part.pos);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.userData.partId = part.id;
+    mesh.userData.baseColor = part.color;
+    mesh.userData.baseEmissive = 0x000000;
+    car.add(mesh);
+    partMeshes[part.id] = mesh;
+  });
+  // Add wheels (4 simple cylinders, not part of the 12 tappable)
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.9 });
+  const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.25, 24);
+  const wheelPositions = [[-1.3, -0.25, 0.85], [-1.3, -0.25, -0.85], [1.3, -0.25, 0.85], [1.3, -0.25, -0.85]];
+  wheelPositions.forEach(p => {
+    const w = new THREE.Mesh(wheelGeo, wheelMat);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(...p);
+    w.castShadow = true;
+    car.add(w);
+  });
+  // Suspension arms (visual hint)
+  scene.add(car);
+  // Simple orbit controls (no external lib — we write minimal handlers)
+  bindOrbitControls(renderer.domElement);
+  // Raycasting
+  renderer.domElement.addEventListener('pointermove', onPointerMove);
+  renderer.domElement.addEventListener('click', onPointerClick);
+  // Resize
+  window.addEventListener('resize', onResize);
+  onResize();
+  threeInited = true;
+  animate();
+}
+
+function onResize() {
+  if (!renderer) return;
+  const w = $('#carCanvas').clientWidth, h = $('#carCanvas').clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+/* Minimal orbit controls (no dependency) */
+let isDragging = false, lastX = 0, lastY = 0;
+let camAzimuth = 0.9, camElev = 0.35, camDist = 9.0;
+function bindOrbitControls(el) {
+  el.addEventListener('pointerdown', (e) => {
+    isDragging = true; lastX = e.clientX; lastY = e.clientY;
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointerup', (e) => {
+    isDragging = false;
+    try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+  });
+  el.addEventListener('pointercancel', () => { isDragging = false; });
+  el.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    camAzimuth -= dx * 0.005;
+    camElev = Math.max(-0.4, Math.min(1.2, camElev - dy * 0.005));
+    updateCamera();
+  });
+  el.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    camDist = Math.max(5, Math.min(15, camDist + e.deltaY * 0.01));
+    updateCamera();
+  }, { passive: false });
+}
+function updateCamera() {
+  if (!camera) return;
+  camera.position.x = camDist * Math.cos(camElev) * Math.sin(camAzimuth);
+  camera.position.y = camDist * Math.sin(camElev) + 0.5;
+  camera.position.z = camDist * Math.cos(camElev) * Math.cos(camAzimuth);
+  camera.lookAt(0, 0.1, 0);
+}
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+function onPointerMove(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(car.children, false);
+  // Reset all
+  for (const id in partMeshes) {
+    const m = partMeshes[id];
+    m.material.emissive.setHex(0x000000);
+  }
+  if (hits.length > 0) {
+    const m = hits[0].object;
+    if (m.userData.partId) {
+      m.material.emissive.setHex(0x224444);
+      renderer.domElement.style.cursor = 'pointer';
+      hoveredPart = m.userData.partId;
+    } else {
+      renderer.domElement.style.cursor = 'grab';
+      hoveredPart = null;
+    }
+  } else {
+    renderer.domElement.style.cursor = isDragging ? 'grabbing' : 'grab';
+    hoveredPart = null;
+  }
+}
+function onPointerClick() {
+  if (hoveredPart) openPartSheet(hoveredPart);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  // Gentle auto-rotate if not dragging
+  if (!isDragging) camAzimuth += 0.0009;
+  updateCamera();
+  renderer.render(scene, camera);
+}
+
+function applyTeamLivery() {
+  const color = new THREE.Color(teamColor(state.selectedTeam));
+  // Tweak: tint the sidepods + nose + floor edges with team color, keep mechanical bits neutral
+  const tintIds = ['frontWing','rearWing','sidepodL','sidepodR','nose','diffuser'];
+  tintIds.forEach(id => {
+    if (partMeshes[id]) {
+      partMeshes[id].material.color = color;
+    }
+  });
+}
+
+function renderCarView() {
+  if (!threeInited) initThree();
+  applyTeamLivery();
+  const team = CONSTRUCTORS.find(c => c.constructorId === state.selectedTeam);
+  $('#hudTeam').textContent = team ? team.name.toUpperCase() : 'MERCEDES';
+  // Parts list
+  const list = $('#partsList');
+  list.innerHTML = '';
+  PARTS.forEach((p, i) => {
+    const row = document.createElement('button');
+    row.className = 'part-row';
+    row.style.setProperty('--team-color', teamColor(state.selectedTeam));
+    row.dataset.partId = p.id;
+    row.innerHTML = `
+      <span class="idx">${(i+1).toString().padStart(2,'0')}</span>
+      <span class="label">${p.name}</span>
+      <span class="arrow">→</span>
+    `;
+    row.addEventListener('click', () => openPartSheet(p.id));
+    list.appendChild(row);
+  });
+  // Season strip
+  renderSeasonStrip();
+  // Back button
+  $('#backToTeamBtn').onclick = () => go('team');
+}
+
+function openPartSheet(partId) {
+  const part = PARTS.find(p => p.id === partId);
+  if (!part) return;
+  const team = CONSTRUCTORS.find(c => c.constructorId === state.selectedTeam);
+  state.selectedPart = partId;
+  const tag = $('#sheetTag');
+  tag.textContent = team ? team.name.toUpperCase() : 'CAR PART';
+  tag.style.background = teamColor(state.selectedTeam);
+  $('#sheetTitle').textContent = part.name;
+  $('#sheetDesc').textContent = part.spec;
+  $('#sheetImpact').textContent = part.impact;
+  $('#sheetReg').textContent = part.regulation;
+  const specs = $('#sheetSpecs');
+  specs.innerHTML = '';
+  [
+    ['Regulation', part.regulation],
+    ['Spec', part.spec],
+    ['3D position', `x=${part.pos[0].toFixed(1)}  y=${part.pos[1].toFixed(1)}  z=${part.pos[2].toFixed(1)}`],
+    ['Bounds', `${part.size[0].toFixed(2)} × ${part.size[1].toFixed(2)} × ${part.size[2].toFixed(2)} m`],
+  ].forEach(([k,v]) => {
+    const div = document.createElement('div');
+    div.className = 'spec';
+    div.innerHTML = `<span class="k">${k}</span><span class="v">${v}</span>`;
+    specs.appendChild(div);
+  });
+  $('#sheet').classList.add('open');
+  // Mark active in list
+  $$('.part-row').forEach(r => r.classList.toggle('active', r.dataset.partId === partId));
+}
+
+function closePartSheet() {
+  $('#sheet').classList.remove('open');
+}
+
+function renderSeasonStrip() {
+  const strip = $('#seasonStrip');
+  strip.innerHTML = '';
+  if (!SEASON) return;
+  const completed = SEASON_SUMMARY ? Object.keys(SEASON_SUMMARY) : [];
+  const today = '2026-06-06'; // hardcoded "today" for the demo
+  // Find the first upcoming race — that's the "NEXT" one
+  const firstUpcoming = SEASON.find(r => !completed.includes(`r${r.round}`));
+  SEASON.forEach(race => {
+    const isDone = completed.includes(`r${race.round}`);
+    const isNext = firstUpcoming && race.round === firstUpcoming.round;
+    const summary = isDone ? SEASON_SUMMARY[`r${race.round}`] : null;
+    const card = document.createElement('div');
+    card.className = `race-card ${isDone ? 'done' : 'upcoming'} ${isNext ? 'next' : ''}`;
+    let podiumHtml = '';
+    if (summary && summary.podium) {
+      podiumHtml = '<div class="podium">' +
+        summary.podium.map(p => `<div class="p"><span class="pos">P${p.pos}</span> <span>${p.driver} · ${p.team}</span></div>`).join('') +
+        '</div>';
+    }
+    card.innerHTML = `
+      <div class="rh">R${race.round} · ${race.Circuit.Location.country}</div>
+      <div class="rn">${race.raceName.replace(' Grand Prix', ' GP')}</div>
+      <div class="rd">${race.date} · ${race.Circuit.circuitName.split(' ').slice(0,3).join(' ')}…</div>
+      <div class="status">${isDone ? 'COMPLETED' : isNext ? 'NEXT' : 'UPCOMING'}</div>
+      ${podiumHtml}
+    `;
+    strip.appendChild(card);
+  });
+}
+
+/* ---------- NAV WIRING ---------- */
+document.addEventListener('click', (e) => {
+  const nav = e.target.closest('[data-go]');
+  if (nav) {
+    const dest = nav.getAttribute('data-go');
+    if (dest === 'teams') go('teams');
+    if (dest === 'season') go('teams');
+  }
+  if (e.target.closest('#sheetClose')) closePartSheet();
+  if (e.target.closest('#sheet') && e.target.id === 'sheet') closePartSheet();
+});
+
+/* ---------- KICKOFF ---------- */
+startSplash();
+</script>
+</body>
+</html>

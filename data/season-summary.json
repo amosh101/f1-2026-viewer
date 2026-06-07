@@ -1,0 +1,117 @@
+{
+  "r1": {
+    "round": 1,
+    "name": "Australian Grand Prix",
+    "date": "2026-03-08",
+    "circuit": "Albert Park Grand Prix Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      }
+    ]
+  },
+  "r2": {
+    "round": 2,
+    "name": "Chinese Grand Prix",
+    "date": "2026-03-15",
+    "circuit": "Shanghai International Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      }
+    ]
+  },
+  "r3": {
+    "round": 3,
+    "name": "Japanese Grand Prix",
+    "date": "2026-03-29",
+    "circuit": "Suzuka Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Piastri",
+        "team": "McLaren"
+      },
+      {
+        "pos": 3,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      }
+    ]
+  },
+  "r4": {
+    "round": 4,
+    "name": "Miami Grand Prix",
+    "date": "2026-05-03",
+    "circuit": "Miami International Autodrome",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Norris",
+        "team": "McLaren"
+      },
+      {
+        "pos": 3,
+        "driver": "Piastri",
+        "team": "McLaren"
+      }
+    ]
+  },
+  "r5": {
+    "round": 5,
+    "name": "Canadian Grand Prix",
+    "date": "2026-05-24",
+    "circuit": "Circuit Gilles Villeneuve",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 3,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      }
+    ]
+  }
+}
