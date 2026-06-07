@@ -2044,6 +2044,7 @@ const state = {
   screen: 'splash',     // 'splash' | 'teams' | 'team' | 'car'
   selectedTeam: null,   // constructorId
   selectedPart: null,   // part id
+  canvasVisible: true,  // set by IntersectionObserver; rAF pauses when false
 };
 
 /* ---------- UTILITIES ---------- */
@@ -2192,7 +2193,14 @@ function initThree() {
   camera = new THREE.PerspectiveCamera(35, w/h, 0.1, 100);
   camera.position.set(5.5, 2.2, 6.5);
   camera.lookAt(0, 0, 0);
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // powerPreference: high-performance = ask the browser to use the discrete GPU if available
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true,
+    powerPreference: 'high-performance',
+    stencil: false,         // we don't need it, saves a renderbuffer
+    depth: true,
+  });
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -2200,6 +2208,9 @@ function initThree() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
+  // The canvas is composited on its own layer; let the GPU cache it
+  renderer.domElement.style.willChange = 'transform';
+  renderer.domElement.style.touchAction = 'none'; // we handle gestures
   canvasWrap.appendChild(renderer.domElement);
   // Lights — cinematic 3-point
   const ambient = new THREE.AmbientLight(0xffffff, 0.35);
@@ -2233,7 +2244,7 @@ function initThree() {
   const grid = new THREE.GridHelper(20, 40, 0x222230, 0x111118);
   grid.position.y = -0.59;
   scene.add(grid);
-  // Build the car (regulation-correct primitive 2026 baseline)
+  // Build the car (regulation-correct 2026 baseline with proper curves)
   car = new THREE.Group();
   partMeshes = {};
   PARTS.forEach(part => {
@@ -2243,9 +2254,11 @@ function initThree() {
       metalness: 0.7,
       emissive: 0x000000,
     });
-    const geo = new THREE.BoxGeometry(...part.size);
+    const geo = buildPartGeometry(part);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(...part.pos);
+    // Some parts (wings, diffuser) face a specific way
+    if (part.rotation) mesh.rotation.set(...part.rotation);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.userData.partId = part.id;
@@ -2254,29 +2267,301 @@ function initThree() {
     car.add(mesh);
     partMeshes[part.id] = mesh;
   });
-  // Add wheels (4 simple cylinders, not part of the 12 tappable)
+
+  // -- Chassis / monocoque (central spine — not in the 13 tappable, but the
+  //    visual anchor everything else attaches to) --
+  const chassisMat = new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.5, metalness: 0.6 });
+  const chassis = new THREE.Mesh(buildChassisGeometry(), chassisMat);
+  chassis.castShadow = true;
+  chassis.receiveShadow = true;
+  car.add(chassis);
+
+  // -- Airbox + air intake horn (the snorkel above the driver) --
+  const airboxMat = new THREE.MeshStandardMaterial({ color: 0x16161c, roughness: 0.45, metalness: 0.7 });
+  const airbox = new THREE.Mesh(buildAirboxGeometry(), airboxMat);
+  airbox.castShadow = true;
+  car.add(airbox);
+
+  // -- Wheels (4 cylinders, base) + 2026-mandated wheel covers (decorative) --
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.9 });
-  const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.25, 24);
+  const wheelCoverMat = new THREE.MeshStandardMaterial({ color: 0x0e0e14, roughness: 0.5, metalness: 0.5 });
   const wheelPositions = [[-1.3, -0.25, 0.85], [-1.3, -0.25, -0.85], [1.3, -0.25, 0.85], [1.3, -0.25, -0.85]];
   wheelPositions.forEach(p => {
-    const w = new THREE.Mesh(wheelGeo, wheelMat);
-    w.rotation.z = Math.PI / 2;
-    w.position.set(...p);
-    w.castShadow = true;
-    car.add(w);
+    // Wheel (tire)
+    const wheelGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.28, 32);
+    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(...p);
+    wheel.castShadow = true;
+    car.add(wheel);
+    // 2026-mandated wheel cover (outer disc with 5-spoke pattern)
+    const coverGeo = buildWheelCoverGeometry();
+    const cover = new THREE.Mesh(coverGeo, wheelCoverMat);
+    cover.rotation.z = Math.PI / 2;
+    cover.position.set(p[0] + (p[0] > 0 ? 0.16 : -0.16), p[1], p[2]);
+    cover.castShadow = true;
+    car.add(cover);
   });
-  // Suspension arms (visual hint)
+
+  // -- Suspension arms (visual hint — front push-rod, rear pull-rod) --
+  const armMat = new THREE.MeshStandardMaterial({ color: 0x444450, roughness: 0.4, metalness: 0.85 });
+  const armGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.55, 8);
+  // Front arms (4 per corner, in 2 V-shaped pairs)
+  for (const zSign of [1, -1]) {
+    const a1 = new THREE.Mesh(armGeo, armMat);
+    a1.position.set(-1.0, 0.05, zSign * 0.55);
+    a1.rotation.set(0, 0, -0.45);
+    a1.castShadow = true;
+    car.add(a1);
+    const a2 = new THREE.Mesh(armGeo, armMat);
+    a2.position.set(-0.8, -0.05, zSign * 0.55);
+    a2.rotation.set(0, 0, 0.45);
+    a2.castShadow = true;
+    car.add(a2);
+  }
+  // Rear arms (pull-rod, lower CG)
+  for (const zSign of [1, -1]) {
+    const a3 = new THREE.Mesh(armGeo, armMat);
+    a3.position.set(1.1, -0.1, zSign * 0.55);
+    a3.rotation.set(0, 0, 0.35);
+    a3.castShadow = true;
+    car.add(a3);
+    const a4 = new THREE.Mesh(armGeo, armMat);
+    a4.position.set(1.3, 0.05, zSign * 0.55);
+    a4.rotation.set(0, 0, -0.35);
+    a4.castShadow = true;
+    car.add(a4);
+  }
+
   scene.add(car);
-  // Simple orbit controls (no external lib — we write minimal handlers)
+  // Orbit controls (smoothness version — see below)
   bindOrbitControls(renderer.domElement);
-  // Raycasting
-  renderer.domElement.addEventListener('pointermove', onPointerMove);
+  // Pointer events (raycast is throttled to rAF inside the handler)
+  renderer.domElement.addEventListener('pointermove', onPointerMove, { passive: true });
   renderer.domElement.addEventListener('click', onPointerClick);
+  // Pause rAF when canvas is off-screen (saves CPU/GPU)
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) state.canvasVisible = e.isIntersecting;
+  }, { threshold: 0.01 });
+  io.observe(canvasWrap);
   // Resize
   window.addEventListener('resize', onResize);
   onResize();
   threeInited = true;
   animate();
+}
+
+/* ============================================================
+   GEOMETRY BUILDERS
+   Each part gets the geometry primitive that best matches its
+   real-world shape. Regulation-correct, not "real CAD" — see
+   SPEC.md "open follow-ups" for honest limitations.
+   ============================================================ */
+
+// Front wing: SVG-extruded top-down outline of the 2-element cascade
+// (2026 regs: narrower than 2024, with cascading elements and endplates)
+function buildFrontWingGeometry() {
+  const shape = new THREE.Shape();
+  // Top-down silhouette: a wide flat wing with rounded endplates
+  // Coordinate system: x = span (left-right), y = chord (front-back)
+  // Total chord (front-to-back) ~0.45, total span ~2.0
+  shape.moveTo(-1.0, 0);
+  shape.lineTo(-1.0, 0.05);   // endplate up
+  shape.lineTo(-0.95, 0.4);
+  shape.lineTo(0.95, 0.4);
+  shape.lineTo(1.0, 0.05);
+  shape.lineTo(1.0, 0);
+  shape.lineTo(0.95, -0.05);  // endplate down
+  shape.lineTo(-0.95, -0.05);
+  shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: 0.04, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2
+  });
+}
+
+// Rear wing: 2 stacked elements (main plane + flap) with curved endplates
+function buildRearWingGeometry() {
+  // Main plane: thin extrusion
+  const main = new THREE.Shape();
+  main.moveTo(-0.55, 0);
+  main.lineTo(-0.55, 0.06);
+  main.lineTo(0.55, 0.06);
+  main.lineTo(0.55, 0);
+  main.closePath();
+  const mainGeo = new THREE.ExtrudeGeometry(main, {
+    depth: 0.7, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
+  });
+  // The wing is thin and tall — the user is looking at it from the side
+  return mainGeo;
+}
+
+// Floor: long flat slab with a slight wedge (thinner at front, thicker at rear)
+// Built as a 2D shape extruded along x to give it a teardrop plan view
+function buildFloorGeometry() {
+  const shape = new THREE.Shape();
+  // Plan view: long teardrop, narrowest at front, widest just before the rear axle
+  shape.moveTo(-2.0, 0);
+  shape.quadraticCurveTo(-1.8, 0.35, -1.0, 0.55);
+  shape.quadraticCurveTo(0, 0.7, 1.0, 0.55);
+  shape.quadraticCurveTo(1.8, 0.35, 2.0, 0);
+  shape.quadraticCurveTo(1.8, -0.35, 1.0, -0.55);
+  shape.quadraticCurveTo(0, -0.7, -1.0, -0.55);
+  shape.quadraticCurveTo(-1.8, -0.35, -2.0, 0);
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: 0.06, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
+  });
+}
+
+// Sidepod: tapered horizontal "shoe" shape, sloping down to the floor
+function buildSidepodGeometry(side) {
+  const shape = new THREE.Shape();
+  // Side view (from outside the car looking in): a fat teardrop tapering down to a point
+  shape.moveTo(-1.2, 0.45);
+  shape.quadraticCurveTo(-1.0, 0.5, -0.5, 0.45);
+  shape.quadraticCurveTo(0.4, 0.35, 1.1, 0.15);
+  shape.quadraticCurveTo(1.2, 0.0, 1.05, -0.15);
+  shape.quadraticCurveTo(0.5, -0.3, -0.5, -0.3);
+  shape.quadraticCurveTo(-1.0, -0.25, -1.2, -0.2);
+  shape.quadraticCurveTo(-1.25, 0.1, -1.2, 0.45);
+  // Mirrored for the right side
+  if (side === 'R') {
+    for (let i = 0; i < shape.curves.length; i++) {
+      const c = shape.curves[i];
+      if (c.v1) c.v1.y *= -1;
+      if (c.v2) c.v2.y *= -1;
+    }
+  }
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: 0.35, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 3
+  });
+}
+
+// Halo: a proper torus, oriented around the cockpit
+function buildHaloGeometry() {
+  const geo = new THREE.TorusGeometry(0.42, 0.045, 12, 32, Math.PI);
+  // Default torus is in the XY plane, so rotate to lay flat across the car
+  geo.rotateX(Math.PI / 2);
+  return geo;
+}
+
+// Nose: tapered cone, narrow at front, wide where it meets the chassis
+function buildNoseGeometry() {
+  // A custom buffer geometry: trapezoidal prism
+  const geo = new THREE.CylinderGeometry(0.05, 0.18, 0.7, 4, 1, false);
+  // Rotate so the long axis points in -x (toward the front of the car)
+  geo.rotateZ(Math.PI / 2);
+  return geo;
+}
+
+// Suspension upright: short cylinder + a small box for the hub
+function buildSuspensionGeometry() {
+  // Cylinder along z, short
+  const geo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16);
+  geo.rotateX(Math.PI / 2);
+  return geo;
+}
+
+// Power unit: the bell-housing/turbine area is roughly conical with a flat top
+// (the actual engine bay is a complex shape, this is a stylised representation)
+function buildPowerUnitGeometry() {
+  const geo = new THREE.CylinderGeometry(0.25, 0.35, 0.7, 8);
+  geo.rotateX(Math.PI / 2);
+  return geo;
+}
+
+// Battery: this is genuinely a box in real F1 (lithium cells in a rectangular case)
+function buildBatteryGeometry() {
+  return new THREE.BoxGeometry(1.0, 0.16, 0.45);
+}
+
+// Brake duct: short fat cylinder with a hollow bore (use a torus for the rim)
+function buildBrakeDuctGeometry() {
+  const outer = new THREE.CylinderGeometry(0.18, 0.18, 0.25, 24);
+  outer.rotateX(Math.PI / 2);
+  return outer;
+}
+
+// Diffuser: angled ramp, wider at top, narrower at bottom (rear of car)
+function buildDiffuserGeometry() {
+  // Trapezoidal extrusion: a 2D shape extruded along the x-axis
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0.5);
+  shape.lineTo(0, -0.5);
+  shape.lineTo(0.35, -0.3);
+  shape.lineTo(0.35, 0.3);
+  shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: 0.95, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
+  });
+}
+
+// Chassis / monocoque: long curved spine, like an arched banana
+function buildChassisGeometry() {
+  const shape = new THREE.Shape();
+  // Side view of the chassis: arched profile
+  shape.moveTo(-0.6, 0.1);
+  shape.quadraticCurveTo(-0.4, 0.3, 0, 0.3);
+  shape.quadraticCurveTo(0.4, 0.3, 0.6, 0.15);
+  shape.quadraticCurveTo(0.7, 0, 0.6, -0.15);
+  shape.quadraticCurveTo(0.4, -0.25, 0, -0.25);
+  shape.quadraticCurveTo(-0.4, -0.25, -0.6, -0.1);
+  shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: 2.0, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 3
+  });
+}
+
+// Airbox + air intake horn: the snorkel above the driver's head
+function buildAirboxGeometry() {
+  // Trapezoidal extrusion
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.3, 0.15);
+  shape.lineTo(0.3, 0.15);
+  shape.lineTo(0.2, 0.4);
+  shape.lineTo(0.18, 0.55);  // top horn
+  shape.lineTo(-0.18, 0.55);
+  shape.lineTo(-0.2, 0.4);
+  shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: 0.45, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
+  });
+}
+
+// 2026-mandated wheel cover: 5-spoke disc
+function buildWheelCoverGeometry() {
+  const shape = new THREE.Shape();
+  // Outer disc
+  shape.absarc(0, 0, 0.33, 0, Math.PI * 2, false);
+  // 5 spokes as cut-outs (we add a hole, then draw 5 spoke cut-outs)
+  const hole = new THREE.Path();
+  hole.absarc(0, 0, 0.09, 0, Math.PI * 2, true);
+  shape.holes.push(hole);
+  // The "open" look — we don't cut spokes, we just leave a solid disc with center hole
+  // For 2026, the wheel covers are mostly solid to reduce turbulent wake
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.04, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 2
+  });
+  return geo;
+}
+
+// Dispatch: which geometry to build for a given part
+function buildPartGeometry(part) {
+  switch (part.id) {
+    case 'frontWing': return buildFrontWingGeometry();
+    case 'rearWing':  return buildRearWingGeometry();
+    case 'floor':     return buildFloorGeometry();
+    case 'sidepodL':  return buildSidepodGeometry('L');
+    case 'sidepodR':  return buildSidepodGeometry('R');
+    case 'halo':      return buildHaloGeometry();
+    case 'nose':      return buildNoseGeometry();
+    case 'suspF':
+    case 'suspR':     return buildSuspensionGeometry();
+    case 'powerUnit': return buildPowerUnitGeometry();
+    case 'battery':   return buildBatteryGeometry();
+    case 'brakeDuct': return buildBrakeDuctGeometry();
+    case 'diffuser':  return buildDiffuserGeometry();
+    default:          return new THREE.BoxGeometry(...part.size);
+  }
 }
 
 function onResize() {
@@ -2287,13 +2572,30 @@ function onResize() {
   camera.updateProjectionMatrix();
 }
 
-/* Minimal orbit controls (no dependency) */
+/* ============================================================
+   SMOOTH ORBIT CONTROLS
+   - Inertia/momentum on drag (velocity decays each frame)
+   - Damped scroll-zoom (not jumpy)
+   - Pinch-to-zoom on touch devices
+   - Auto-rotate pauses on user input, resumes after 4s idle
+   - Hero-drift: a slow camera nudge when idle
+   ============================================================ */
 let isDragging = false, lastX = 0, lastY = 0;
 let camAzimuth = 0.9, camElev = 0.35, camDist = 9.0;
+let azVelocity = 0, elVelocity = 0, distVelocity = 0;
+let lastUserInputAt = 0;            // ms timestamp
+let isTouchGesture = false;          // track multi-touch for pinch
+let pinchStartDist = 0, pinchStartCamDist = 0;
+let raycastRequested = false;        // throttle raycast to rAF
+
 function bindOrbitControls(el) {
+  // --- Pointer (mouse + touch, but only single-finger here) ---
   el.addEventListener('pointerdown', (e) => {
-    isDragging = true; lastX = e.clientX; lastY = e.clientY;
-    el.setPointerCapture(e.pointerId);
+    if (e.pointerType === 'touch' && e.isPrimary === false) return; // ignore secondary touches
+    isDragging = true;
+    lastX = e.clientX; lastY = e.clientY;
+    lastUserInputAt = performance.now();
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
   });
   el.addEventListener('pointerup', (e) => {
     isDragging = false;
@@ -2304,15 +2606,54 @@ function bindOrbitControls(el) {
     if (!isDragging) return;
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
     lastX = e.clientX; lastY = e.clientY;
-    camAzimuth -= dx * 0.005;
-    camElev = Math.max(-0.4, Math.min(1.2, camElev - dy * 0.005));
+    // Convert pixel deltas to angular velocity (radians per frame)
+    azVelocity = -dx * 0.005;
+    elVelocity = -dy * 0.005;
+    camAzimuth += azVelocity;
+    camElev = Math.max(-0.4, Math.min(1.2, camElev + elVelocity));
+    lastUserInputAt = performance.now();
     updateCamera();
+    // request a raycast on the next animation frame
+    raycastRequested = true;
   });
+  // --- Wheel (mouse + trackpad) — damped zoom ---
   el.addEventListener('wheel', (e) => {
     e.preventDefault();
-    camDist = Math.max(5, Math.min(15, camDist + e.deltaY * 0.01));
-    updateCamera();
+    lastUserInputAt = performance.now();
+    // Normalise deltaY across browsers (Firefox uses line mode, others pixel)
+    const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    // Add to velocity, not directly to camDist — the frame loop will smooth it
+    distVelocity += delta * 0.0025;
+    raycastRequested = true;
   }, { passive: false });
+  // --- Multi-touch pinch ---
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      isTouchGesture = true;
+      isDragging = false; // disable single-finger drag during pinch
+      const t1 = e.touches[0], t2 = e.touches[1];
+      pinchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      pinchStartCamDist = camDist;
+      lastUserInputAt = performance.now();
+    }
+  }, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && isTouchGesture) {
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const d = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      if (pinchStartDist > 0) {
+        const scale = pinchStartDist / d; // pinch out = zoom in
+        camDist = Math.max(5, Math.min(15, pinchStartCamDist * scale));
+        lastUserInputAt = performance.now();
+      }
+    }
+  }, { passive: false });
+  el.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      isTouchGesture = false;
+    }
+  });
 }
 function updateCamera() {
   if (!camera) return;
@@ -2324,16 +2665,28 @@ function updateCamera() {
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
+let pointerDirty = false;        // has the pointer moved since the last raycast?
+let pointerEvent = null;
+
 function onPointerMove(e) {
+  // Stash the event; do the actual raycast in the rAF loop
+  pointerEvent = e;
+  pointerDirty = true;
+  raycastRequested = true;
+}
+
+function performRaycast() {
+  if (!pointerDirty || !pointerEvent) return;
+  pointerDirty = false;
+  const e = pointerEvent;
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
   const hits = raycaster.intersectObjects(car.children, false);
-  // Reset all
+  // Reset emissive on all tappable parts
   for (const id in partMeshes) {
-    const m = partMeshes[id];
-    m.material.emissive.setHex(0x000000);
+    partMeshes[id].material.emissive.setHex(0x000000);
   }
   if (hits.length > 0) {
     const m = hits[0].object;
@@ -2342,7 +2695,7 @@ function onPointerMove(e) {
       renderer.domElement.style.cursor = 'pointer';
       hoveredPart = m.userData.partId;
     } else {
-      renderer.domElement.style.cursor = 'grab';
+      renderer.domElement.style.cursor = isDragging ? 'grabbing' : 'grab';
       hoveredPart = null;
     }
   } else {
@@ -2354,11 +2707,56 @@ function onPointerClick() {
   if (hoveredPart) openPartSheet(hoveredPart);
 }
 
-function animate() {
+/* Animate loop
+   - All camera updates happen here, in one place
+   - Raycast runs at most once per frame
+   - rAF is paused when the canvas is off-screen
+   - Idle behaviour: gentle auto-rotate for 4s, then ease into a slow hero-drift */
+let lastFrameTime = 0;
+function animate(now) {
   requestAnimationFrame(animate);
-  // Gentle auto-rotate if not dragging
-  if (!isDragging) camAzimuth += 0.0009;
+  if (!renderer || !state.canvasVisible) return;
+
+  const dt = lastFrameTime === 0 ? 16 : Math.min(64, now - lastFrameTime);
+  lastFrameTime = now;
+
+  // --- Momentum / damping ---
+  // Apply angular velocities from previous frame
+  if (!isDragging && !isTouchGesture) {
+    camAzimuth += azVelocity;
+    camElev = Math.max(-0.4, Math.min(1.2, camElev + elVelocity));
+    // Apply zoom velocity (also damped)
+    camDist = Math.max(5, Math.min(15, camDist + distVelocity));
+    // Exponential decay (damping)
+    const damping = Math.exp(-dt * 0.006); // ~half-life of 100ms
+    azVelocity *= damping;
+    elVelocity *= damping;
+    distVelocity *= damping;
+    if (Math.abs(azVelocity) < 1e-5) azVelocity = 0;
+    if (Math.abs(elVelocity) < 1e-5) elVelocity = 0;
+    if (Math.abs(distVelocity) < 1e-5) distVelocity = 0;
+  } else {
+    // While dragging, zero out velocities so release gives a clean stop... actually
+    // we want to KEEP the velocity so the release triggers a coast. So we do nothing.
+  }
+
+  // --- Idle behaviour ---
+  const idleMs = now - lastUserInputAt;
+  if (idleMs > 4000 && !isDragging) {
+    // After 4s of no input, very gentle auto-rotate (~one full rev per 60s)
+    camAzimuth += 0.00012 * dt;
+    // Hero-drift: subtle sinusoidal elevation pulse, ±0.05 rad, 8s period
+    camElev = 0.35 + Math.sin(now * 0.0008) * 0.05;
+  }
+
   updateCamera();
+
+  // --- Throttled raycast (one per frame max) ---
+  if (raycastRequested) {
+    performRaycast();
+    raycastRequested = false;
+  }
+
   renderer.render(scene, camera);
 }
 

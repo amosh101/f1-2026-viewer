@@ -1,55 +1,64 @@
-# F1 2026 Viewer — Browser MVP
+# F1 2026 Viewer
 
-Interactive browser experience for the 2026 F1 regulation era.
-Built as a single-page HTML application with Three.js for 3D car
-visualization, real 2026 data from Jolpica + OpenF1 APIs.
+Interactive browser experience for the 2026 F1 regulation era. Pick a
+team, see the car, tap parts, read the spec and the FIA 2026 Technical
+Regulation article behind it, see how that team did this season.
 
-## Run
+## Live
 
-```bash
-cd /root/.hermes/workspace/projects/f1-2026-viewer
-python3 -m http.server 8081 --bind 100.91.143.50
-```
+- **Tailscale:** `http://100.91.143.50:8081/`
+- **Public:** blocked (Tailscale-only by design)
 
-Then open: `http://100.91.143.50:8081/`
+## What's in this repo
 
-Tailscale-only — public IP blocked via iptables.
+- `index.html` — 76 KB single self-contained file, the entire app
+- `data/` — cached JSON from Jolpica (Ergast mirror) + OpenF1,
+  captured 2026-06-06
+- `SPEC.md` — design + scope spec
+- `BUILD-REPORT.md` — what shipped and what was verified
 
-## Layout
-
-```
-.
-├── SPEC.md                  # design + scope spec
-├── README.md
-├── index.html               # the entire app
-├── data/                    # pre-cached API responses (real, no mocks)
-│   ├── season-2026.json
-│   ├── constructors.json
-│   ├── drivers.json
-│   ├── r1-australia.json ... r5-canada.json
-│   ├── r5-canada-qualifying.json
-│   └── openf1-drivers-latest.json
-└── assets/                  # if needed
-```
-
-## Data
-
-All data fetched live from:
-- `https://api.jolpi.ca/ergast/f1/2026/...` (Ergast mirror)
-- `https://api.openf1.org/v1/...`
-
-Snapshot taken 2026-06-06. Season has 5 races completed, R6 Monaco
-is on 2026-06-07. R6-R22 show as UPCOMING.
-
-## Refresh data
+## Run locally
 
 ```bash
-./scripts/refresh-data.sh
+python3 -m http.server 8081 --bind 127.0.0.1
+open http://127.0.0.1:8081/
 ```
 
-(To be added in v2.)
+No build step, no node_modules. Three.js loads from `esm.sh`, Inter
+from Google Fonts.
 
-## iOS port
+## What's real (no mocks)
 
-After browser MVP validates, port to SwiftUI + RealityKit. See
-`SPEC.md` §"Scope deferred to v2".
+- 11 constructors (Mercedes, Ferrari, Red Bull, McLaren, Aston
+  Martin, Alpine, Williams, RB, Audi, Haas, Cadillac) — Audi and
+  Cadillac are the new 2026 entries
+- 22 drivers with numbers, nationalities, dates of birth
+- 22-race 2026 calendar, R1 Australia → R22 Abu Dhabi
+- R1-R5 completed with podiums (Antonelli 4 wins, Russell 1)
+- R6 Monaco = NEXT (race date 2026-06-07)
+- R7-R22 marked UPCOMING with dates
+- 13 car parts mapped to FIA 2026 Technical Regulations articles:
+  3.7, 3.9, 3.10, 3.13, 3.14, 3.15, 5, 5.4, 10, 11, 12
+
+## What's stylized (honest)
+
+- 3D car geometry is **regulation-correct but generic** — built from
+  primitive Three.js geometry to match the 2026 spec (wheelbase,
+  floor edges, front wing cascade, sidepod intrusion panels). It
+  does **not** replicate the proprietary aero detail of any team's
+  real 2026 car.
+- Team liveries are tinted via the team color hex code; logos and
+  sponsor decals are not modeled.
+- Impact notes are derived from FIA regulation framing (what the
+  part is for), not from per-team proprietary telemetry.
+
+## Roadmap
+
+- iOS port: SwiftUI + RealityKit
+- Per-team unique geometry from launch imagery
+- OpenF1 telemetry overlay (4 Hz car data per driver)
+- Audio (deferred — engine sound requires licensing)
+
+## License
+
+Data is public (Jolpica + OpenF1 free APIs). Code: MIT.
