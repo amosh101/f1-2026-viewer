@@ -753,10 +753,69 @@ a { color: inherit; text-decoration: none; }
 <script type="importmap">
 {
   "imports": {
-    "three": "https://esm.sh/three@0.160.0"
+    "three": "./vendor/three.module.js"
   }
 }
 </script>
+<!--
+  WebGL status overlay — shows while Three.js loads + if the context fails.
+  Three states: "loading", "ready" (auto-hides), "error" (shows the actual reason).
+  Without this, an iOS Safari WebGL failure looks identical to a CDN failure:
+  a black canvas with no console message the user can see.
+-->
+<style>
+  #webgl-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #0a0a14 0%, #000 70%);
+    color: #f0f0fa;
+    font-family: 'Inter', system-ui, sans-serif;
+    z-index: 50;
+    transition: opacity 400ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    pointer-events: none;
+  }
+  #webgl-status.hidden { opacity: 0; }
+  #webgl-status .ring {
+    width: 56px; height: 56px;
+    border: 2px solid rgba(240, 240, 250, 0.12);
+    border-top-color: #00d7b6;
+    border-radius: 50%;
+    animation: webgl-spin 0.9s linear infinite;
+    margin-bottom: 18px;
+  }
+  #webgl-status.error .ring { display: none; }
+  #webgl-status.error::before {
+    content: '⚠';
+    font-size: 48px;
+    color: #ff4d4d;
+    margin-bottom: 12px;
+  }
+  #webgl-status .label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(240, 240, 250, 0.7);
+  }
+  #webgl-status .sub {
+    font-size: 11px;
+    margin-top: 8px;
+    color: rgba(240, 240, 250, 0.4);
+    max-width: 80%;
+    text-align: center;
+    line-height: 1.5;
+  }
+  @keyframes webgl-spin { to { transform: rotate(360deg); } }
+</style>
+<div id="webgl-status" data-state="loading">
+  <div class="ring"></div>
+  <div class="label">Loading 3D engine</div>
+  <div class="sub" id="webgl-status-sub">Initialising WebGL…</div>
+</div>
 <script type="module">
 import * as THREE from 'three';
 
@@ -2188,19 +2247,49 @@ function initThree() {
   if (threeInited) return;
   const canvasWrap = $('#carCanvas');
   const w = canvasWrap.clientWidth, h = canvasWrap.clientHeight;
+  const status = $('#webgl-status');
+  const statusSub = $('#webgl-status-sub');
+  const showError = (msg) => {
+    if (!status) return;
+    status.setAttribute('data-state', 'error');
+    status.classList.add('error');
+    if (statusSub) statusSub.textContent = msg;
+    console.error('[F1 viewer] WebGL init failed:', msg);
+  };
+  // --- Quick context probe (catches iOS Safari's silent failures early) ---
+  try {
+    const probe = document.createElement('canvas');
+    const gl = probe.getContext('webgl2') || probe.getContext('webgl') || probe.getContext('experimental-webgl');
+    if (!gl) {
+      showError('WebGL is not available in this browser. The 2026 viewer requires WebGL 2.0 — try a recent Chrome, Safari, or Firefox.');
+      return;
+    }
+  } catch (e) {
+    showError('WebGL probe threw: ' + e.message);
+    return;
+  }
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x000000, 8, 22);
   camera = new THREE.PerspectiveCamera(35, w/h, 0.1, 100);
   camera.position.set(5.5, 2.2, 6.5);
   camera.lookAt(0, 0, 0);
   // powerPreference: high-performance = ask the browser to use the discrete GPU if available
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
-    powerPreference: 'high-performance',
-    stencil: false,         // we don't need it, saves a renderbuffer
-    depth: true,
-  });
+  try {
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+      stencil: false,         // we don't need it, saves a renderbuffer
+      depth: true,
+    });
+  } catch (e) {
+    showError('Could not create WebGL renderer: ' + e.message);
+    return;
+  }
+  if (!renderer || !renderer.getContext()) {
+    showError('WebGL renderer created but the GL context is null. Your browser may have WebGL disabled in settings.');
+    return;
+  }
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -2211,7 +2300,25 @@ function initThree() {
   // The canvas is composited on its own layer; let the GPU cache it
   renderer.domElement.style.willChange = 'transform';
   renderer.domElement.style.touchAction = 'none'; // we handle gestures
+  // iOS Safari loses WebGL contexts when the tab is backgrounded or the
+  // device memory pressure rises. We listen for the loss and recover.
+  renderer.domElement.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    if (status) { status.classList.remove('hidden'); status.setAttribute('data-state', 'loading'); }
+    if (statusSub) statusSub.textContent = 'GPU context lost — restoring…';
+    console.warn('[F1 viewer] WebGL context lost');
+  }, false);
+  renderer.domElement.addEventListener('webglcontextrestored', () => {
+    if (status) { status.classList.add('hidden'); }
+    console.info('[F1 viewer] WebGL context restored');
+  }, false);
   canvasWrap.appendChild(renderer.domElement);
+  // Hide the loading indicator — we have a live GL context
+  if (status) {
+    status.classList.add('hidden');
+    // Fully remove from layout after the fade so it doesn't intercept events
+    setTimeout(() => { if (status) status.style.display = 'none'; }, 500);
+  }
   // Lights — cinematic 3-point
   const ambient = new THREE.AmbientLight(0xffffff, 0.35);
   scene.add(ambient);
