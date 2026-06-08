@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>F1 2026 — Explore the Car</title>
+<style>
+  :root {
+    --bg: #050507;
+    --bg-2: #0b0b10;
+    --ink: #f0f0fa;
+    --ink-dim: #9aa0b4;
+    --line: #1c1c25;
+    --line-2: #2a2a35;
+    --accent: #27e0c4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .topbar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px calc(12px + env(safe-area-inset-top)) 16px;
+    background: linear-gradient(180deg, rgba(5,5,7,0.95), rgba(5,5,7,0.7));
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar h1 {
+    margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink);
+  }
+  .topbar .sub {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .back {
+    background: transparent; border: 1px solid var(--line-2); color: var(--ink);
+    padding: 8px 12px; border-radius: 999px; font-size: 12px;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .back::before { content: "←"; font-size: 14px; }
+
+  /* ---- Team picker ---- */
+  .teams {
+    display: flex; gap: 8px; overflow-x: auto; padding: 14px 16px 10px;
+    scrollbar-width: none;
+  }
+  .teams::-webkit-scrollbar { display: none; }
+  .team-chip {
+    flex: 0 0 auto; min-width: 90px;
+    background: var(--bg-2); border: 1px solid var(--line-2);
+    color: var(--ink); border-radius: 14px;
+    padding: 10px 12px; text-align: left; cursor: pointer;
+    transition: border-color .15s, transform .15s;
+  }
+  .team-chip.active { border-color: var(--accent); transform: translateY(-1px); }
+  .team-chip .name { font-size: 12px; font-weight: 600; line-height: 1.1; }
+  .team-chip .chassis { font-size: 10px; color: var(--ink-dim); margin-top: 2px; letter-spacing: 0.05em; }
+  .team-chip .stripe { display: block; height: 3px; width: 28px; border-radius: 2px; margin-bottom: 6px; }
+
+  /* ---- Hero / car diagram ---- */
+  .hero {
+    margin: 8px 16px 0; padding: 12px 12px 8px;
+    background: linear-gradient(180deg, #0a0a10 0%, #06060a 100%);
+    border: 1px solid var(--line); border-radius: 18px;
+    position: relative; overflow: hidden;
+  }
+  .hero-meta {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 0 4px 10px;
+  }
+  .hero-meta .team { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-dim); }
+  .hero-meta .chassis { font-size: 20px; font-weight: 700; letter-spacing: 0.04em; }
+  .hero-meta .pts { font-size: 11px; color: var(--ink-dim); }
+  .hero-meta .pts b { color: var(--accent); font-weight: 700; }
+  .car-wrap {
+    position: relative; width: 100%; aspect-ratio: 16/10;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .car-wrap svg { width: 100%; height: 100%; display: block; }
+  .car-wrap .hint {
+    position: absolute; bottom: 6px; right: 8px;
+    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  /* Hotspot pulse */
+  @keyframes pulse {
+    0%   { transform: scale(1);   opacity: 0.95; }
+    50%  { transform: scale(1.4); opacity: 0.35; }
+    100% { transform: scale(1);   opacity: 0.95; }
+  }
+  .hot { transform-box: fill-box; transform-origin: center; animation: pulse 2.4s ease-in-out infinite; }
+  .hot:hover, .hot:focus { animation: none; opacity: 1; }
+
+  /* ---- Parts list (12 tappable rows) ---- */
+  .parts { margin: 16px 16px 0; }
+  .parts h2 {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-dim); margin: 0 0 10px; font-weight: 600;
+  }
+  .part-row {
+    display: grid; grid-template-columns: 28px 1fr auto; gap: 10px;
+    align-items: center; padding: 12px 14px;
+    background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px;
+    margin-bottom: 8px; cursor: pointer; transition: border-color .12s, transform .12s;
+  }
+  .part-row:hover, .part-row.active { border-color: var(--accent); }
+  .part-row.active { transform: translateX(2px); }
+  .part-row .num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--line); color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .part-row.active .num { background: var(--accent); color: var(--bg); }
+  .part-row .label { display: flex; flex-direction: column; min-width: 0; }
+  .part-row .label .name { font-size: 13px; font-weight: 600; }
+  .part-row .label .reg { font-size: 10px; color: var(--ink-dim); letter-spacing: 0.06em; }
+  .part-row .chev { color: var(--ink-dim); font-size: 18px; line-height: 1; }
+
+  /* ---- Season strip ---- */
+  .season { margin: 18px 16px 24px; }
+  .season h2 {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-dim); margin: 0 0 10px; font-weight: 600;
+  }
+  .race-row {
+    display: grid; grid-template-columns: 28px 1fr; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--line);
+  }
+  .race-row:last-child { border-bottom: none; }
+  .race-row .r { font-size: 10px; color: var(--ink-dim); letter-spacing: 0.1em; }
+  .race-row .name { font-size: 13px; font-weight: 600; }
+  .race-row .date { font-size: 10px; color: var(--ink-dim); }
+  .race-row .podium { font-size: 11px; color: var(--ink); margin-top: 4px; }
+  .race-row .podium b { color: var(--accent); }
+
+  /* ---- Regulation bottom sheet ---- */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 11;
+    background: var(--bg-2); border-top-left-radius: 20px; border-top-right-radius: 20px;
+    border: 1px solid var(--line-2);
+    transform: translateY(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1);
+    max-height: 78vh; overflow-y: auto;
+    padding: 16px 18px calc(20px + env(safe-area-inset-bottom)) 18px;
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet .grab {
+    width: 36px; height: 4px; background: var(--line-2); border-radius: 2px;
+    margin: -4px auto 12px;
+  }
+  .sheet .row1 {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    margin-bottom: 4px;
+  }
+  .sheet .row1 .name { font-size: 18px; font-weight: 700; }
+  .sheet .row1 .close {
+    background: transparent; border: 1px solid var(--line-2); color: var(--ink-dim);
+    width: 32px; height: 32px; border-radius: 50%; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .sheet .reg-tag {
+    display: inline-block; font-size: 10px; letter-spacing: 0.1em;
+    background: var(--line); color: var(--accent);
+    padding: 4px 8px; border-radius: 4px; margin: 4px 0 12px;
+  }
+  .sheet .spec { font-size: 13px; color: var(--ink); margin: 0 0 10px; }
+  .sheet .impact {
+    font-size: 12px; color: var(--ink-dim); line-height: 1.5;
+    border-top: 1px solid var(--line); padding-top: 10px;
+  }
+  .sheet .impact b { color: var(--ink); }
+
+  /* ---- Tiny logo ---- */
+  .footer {
+    text-align: center; padding: 20px 0 30px; font-size: 10px;
+    color: var(--ink-dim); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" href="./">Teams</a>
+    <div style="text-align:center">
+      <h1>Explore the Car</h1>
+      <div class="sub">FIA 2026 Technical Regulations</div>
+    </div>
+    <div style="width:64px"></div>
+  </div>
+
+  <div class="teams" id="teams" aria-label="Pick a constructor"></div>
+
+  <section class="hero" aria-label="Car diagram">
+    <div class="hero-meta">
+      <div>
+        <div class="team" id="teamLabel">MERCEDES</div>
+        <div class="chassis" id="chassisLabel">F1 W17</div>
+      </div>
+      <div class="pts" id="ptsLabel">P1 · <b>244</b> pts</div>
+    </div>
+    <div class="car-wrap">
+      <!-- SVG car (top-down schematic of 2026 F1 chassis).
+           viewBox is 0..1000 wide, 0..600 tall, origin top-left.
+           Hotspots are <a class="hot"> elements that open the sheet. -->
+      <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="F1 car top-down schematic">
+        <defs>
+          <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#15151c"/>
+            <stop offset="1" stop-color="#0a0a0e"/>
+          </linearGradient>
+          <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1c1c26"/>
+            <stop offset="1" stop-color="#0e0e14"/>
+          </linearGradient>
+          <linearGradient id="teamGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" id="teamGradA" stop-color="#1f2a2a"/>
+            <stop offset="1" id="teamGradB" stop-color="#27e0c4"/>
+          </linearGradient>
+          <radialGradient id="tyreGrad" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#222"/>
+            <stop offset="1" stop-color="#080808"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Ground/track band -->
+        <rect x="0" y="0" width="1000" height="600" fill="#06060a"/>
+        <g stroke="#0e0e16" stroke-width="1">
+          <line x1="0" y1="120" x2="1000" y2="120"/>
+          <line x1="0" y1="480" x2="1000" y2="480"/>
+        </g>
+        <!-- centerline dashes -->
+        <g stroke="#101018" stroke-width="1" stroke-dasharray="8 14">
+          <line x1="0" y1="300" x2="1000" y2="300"/>
+        </g>
+
+        <!-- Floor (long, thin plank) -->
+        <rect class="part-floor" x="180" y="270" width="640" height="60" rx="6" fill="url(#floorGrad)" stroke="#2a2a35"/>
+
+        <!-- Nose (tapered, 4 stacked boxes) -->
+        <g class="part-nose" fill="url(#bodyGrad)" stroke="#2a2a35">
+          <rect x="178" y="280" width="60"  height="40" />
+          <rect x="138" y="282" width="44"  height="36" />
+          <rect x="106" y="285" width="34"  height="30" />
+          <rect x="84"  y="288" width="24"  height="24" />
+          <!-- nose tip -->
+          <polygon points="84,288 60,300 84,312" />
+        </g>
+
+        <!-- Front wing (3 stacked elements + 2 endplates) -->
+        <g class="part-frontWing" fill="url(#teamGrad)" stroke="#2a2a35">
+          <rect x="40"  y="246" width="60" height="108"/>
+          <rect x="44"  y="240" width="54" height="14" rx="2"/>
+          <rect x="48"  y="226" width="48" height="12" rx="2"/>
+          <rect x="54"  y="214" width="36" height="10" rx="2"/>
+          <!-- endplates -->
+          <rect x="36"  y="200" width="6"  height="200" fill="#15151c"/>
+          <rect x="100" y="200" width="6"  height="200" fill="#15151c"/>
+        </g>
+
+        <!-- Sidepods (L and R) -->
+        <g class="part-sidepodL" fill="url(#teamGrad)" stroke="#2a2a35">
+          <rect x="240" y="220" width="240" height="46" rx="6"/>
+          <rect x="240" y="200" width="80"  height="22" rx="4"/>
+        </g>
+        <g class="part-sidepodR" fill="url(#teamGrad)" stroke="#2a2a35">
+          <rect x="240" y="334" width="240" height="46" rx="6"/>
+          <rect x="240" y="378" width="80"  height="22" rx="4"/>
+        </g>
+
+        <!-- Halo (top-down: two thin uprights + crossbar) -->
+        <g class="part-halo" fill="none" stroke="#888" stroke-width="4" stroke-linecap="round">
+          <line x1="470" y1="270" x2="470" y2="330"/>
+          <line x1="450" y1="270" x2="450" y2="330"/>
+          <line x1="540" y1="276" x2="540" y2="324"/>
+          <line x1="430" y1="270" x2="555" y2="270"/>
+          <line x1="430" y1="330" x2="555" y2="330"/>
+          <rect x="450" y="270" width="100" height="60" rx="14" fill="#3a3a45" fill-opacity="0.7" stroke="#666"/>
+        </g>
+
+        <!-- Engine cover / airbox (above power unit) -->
+        <g class="part-powerUnit" fill="url(#bodyGrad)" stroke="#2a2a35">
+          <rect x="540" y="270" width="170" height="60" rx="10"/>
+          <!-- airbox / intake horn -->
+          <polygon points="540,270 540,330 510,300" fill="#1a1a22"/>
+        </g>
+
+        <!-- Battery (orange slab behind driver, in front of engine) -->
+        <g class="part-battery">
+          <rect x="470" y="282" width="80" height="36" rx="4" fill="#c46000" stroke="#ffaa00"/>
+          <rect x="490" y="278" width="40" height="6"  rx="2" fill="#ffaa00"/>
+        </g>
+
+        <!-- Suspension front (push-rod hint) -->
+        <g class="part-suspF" fill="#888" stroke="#444">
+          <line x1="170" y1="246" x2="190" y2="270" stroke-width="3"/>
+          <line x1="170" y1="354" x2="190" y2="330" stroke-width="3"/>
+          <circle cx="190" cy="300" r="3" fill="#aaa"/>
+        </g>
+        <!-- Suspension rear -->
+        <g class="part-suspR" fill="#888" stroke="#444">
+          <line x1="780" y1="246" x2="800" y2="270" stroke-width="3"/>
+          <line x1="780" y1="354" x2="800" y2="330" stroke-width="3"/>
+          <circle cx="800" cy="300" r="3" fill="#aaa"/>
+        </g>
+
+        <!-- Rear wing (main element + upper flap + 2 endplates) -->
+        <g class="part-rearWing" fill="url(#teamGrad)" stroke="#2a2a35">
+          <rect x="800" y="252" width="80" height="96" rx="2"/>
+          <rect x="808" y="240" width="64" height="14" rx="2"/>
+          <rect x="816" y="230" width="48" height="10" rx="2"/>
+          <!-- endplates -->
+          <rect x="800" y="200" width="6"  height="200" fill="#15151c"/>
+          <rect x="874" y="200" width="6"  height="200" fill="#15151c"/>
+          <!-- center pillar -->
+          <rect x="836" y="240" width="8"  height="120" fill="#1a1a22"/>
+        </g>
+
+        <!-- Diffuser (between rear axle and rear wing) -->
+        <g class="part-diffuser" fill="url(#teamGrad)" stroke="#2a2a35">
+          <rect x="720" y="270" width="80" height="60" rx="4"/>
+          <line x1="720" y1="270" x2="720" y2="330" stroke="#1a1a22" stroke-width="2"/>
+          <line x1="800" y1="270" x2="800" y2="330" stroke="#1a1a22" stroke-width="2"/>
+        </g>
+
+        <!-- Brake duct (front-left, between front wheel and sidepod) -->
+        <g class="part-brakeDuct">
+          <circle cx="225" cy="300" r="9" fill="#333344" stroke="#666"/>
+        </g>
+
+        <!-- Tyres (4 compound circles with rim detail) -->
+        <g>
+          <circle class="tyre" cx="195" cy="300" r="38" fill="url(#tyreGrad)"/>
+          <circle class="rim"  cx="195" cy="300" r="22" fill="#1a1a22" stroke="#444" stroke-width="1"/>
+          <circle class="hub"  cx="195" cy="300" r="6"  fill="#888"/>
+          <circle class="tyre" cx="195" cy="450" r="38" fill="url(#tyreGrad)"/>
+          <circle class="rim"  cx="195" cy="450" r="22" fill="#1a1a22" stroke="#444" stroke-width="1"/>
+          <circle class="hub"  cx="195" cy="450" r="6"  fill="#888"/>
+          <circle class="tyre" cx="755" cy="300" r="38" fill="url(#tyreGrad)"/>
+          <circle class="rim"  cx="755" cy="300" r="22" fill="#1a1a22" stroke="#444" stroke-width="1"/>
+          <circle class="hub"  cx="755" cy="300" r="6"  fill="#888"/>
+          <circle class="tyre" cx="755" cy="450" r="38" fill="url(#tyreGrad)"/>
+          <circle class="rim"  cx="755" cy="450" r="22" fill="#1a1a22" stroke="#444" stroke-width="1"/>
+          <circle class="hub"  cx="755" cy="450" r="6"  fill="#888"/>
+        </g>
+
+        <!-- Hotspots: small pulsing circles positioned on each part -->
+        <g id="hotspots"></g>
+      </svg>
+      <div class="hint">Tap a part</div>
+    </div>
+  </section>
+
+  <section class="parts" aria-label="Parts list">
+    <h2>12 Parts · FIA 2026 Regs</h2>
+    <div id="partsList"></div>
+  </section>
+
+  <section class="season" aria-label="2026 season">
+    <h2>2026 Season</h2>
+    <div id="seasonList"></div>
+  </section>
+
+  <div class="footer">F1 2026 · real data via Jolpica / Ergast · 2026-06-08</div>
+
+  <!-- Bottom sheet for selected part -->
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true">
+    <div class="grab"></div>
+    <div class="row1">
+      <div class="name" id="sheetName">—</div>
+      <button class="close" id="sheetClose" aria-label="Close">✕</button>
+    </div>
+    <div class="reg-tag" id="sheetReg">FIA Tech Regs</div>
+    <p class="spec" id="sheetSpec">—</p>
+    <p class="impact" id="sheetImpact">—</p>
+  </div>
+
+<script src="explore-car.js"></script>
+</body>
+</html>

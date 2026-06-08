@@ -703,7 +703,11 @@ a { color: inherit; text-decoration: none; }
     </div>
   </section>
 
-  <!-- SCREEN: CAR 3D -->
+  <!-- SCREEN: CAR 3D — DEACTIVATED 2026-06-08
+       The Three.js 3D viewer did not render reliably on iOS Safari (real device)
+       despite working in Playwright WebKit. Replaced by the standalone
+       explore-car.html (SVG-based, no WebGL, works on every browser).
+       Code kept on disk for now in case we want to restore a 3D view later.
   <section class="screen" id="screen-car" data-screen="car">
     <div class="car-stage">
       <div class="car-canvas" id="carCanvas">
@@ -741,6 +745,7 @@ a { color: inherit; text-decoration: none; }
       <button class="btn-ghost" id="backToTeamBtn">← BACK TO TEAM</button>
     </div>
   </section>
+  -->
 </div>
 
 <!-- PART DETAIL SHEET -->
@@ -2178,7 +2183,10 @@ function go(screen, params = {}) {
   $$('#topnav button').forEach(b => b.disabled = (screen === 'splash'));
   if (screen === 'teams') renderTeams();
   if (screen === 'team')  renderTeamDetail();
-  if (screen === 'car')   renderCarView();
+  // 'car' screen is deactivated (see comment in markup). The exploreBtn now
+  // navigates to the standalone explore-car.html instead. Kept as a no-op
+  // here so old callers don't break.
+  if (screen === 'car')   { /* no-op: 3D viewer replaced by explore-car.html */ }
   // Scroll to top on screen change
   $('.stage').scrollTop = 0;
   window.scrollTo(0, 0);
@@ -2281,8 +2289,12 @@ function renderTeamDetail() {
     });
   }
   $('#teamPts').textContent = pts;
-  // Explore button
-  $('#exploreBtn').onclick = () => go('car');
+  // Explore button — navigates to the standalone explore-car.html page
+  // (replaces the old in-app 3D viewer; the 3D never worked reliably on iOS).
+  $('#exploreBtn').onclick = () => {
+    const teamId = state.selectedTeam || 'mercedes';
+    window.location.href = `./explore-car.html?team=${teamId}`;
+  };
   // Back button (in cta row) uses data-go attr
   $$('button[data-go="teams"]').forEach(b => b.onclick = () => go('teams'));
 }
@@ -2450,40 +2462,60 @@ function initThree() {
   const grid = new THREE.GridHelper(20, 40, 0x222230, 0x111118);
   grid.position.y = -0.59;
   scene.add(grid);
-  // Build the car (regulation-correct 2026 baseline with proper curves)
+  // Build the car — each part is either a single Mesh (v1) or a Group
+  // of meshes (v3 multi-primitive polish). We treat the result uniformly:
+  // wrap in a node, set userData.partId on the *outer* node, position it.
   car = new THREE.Group();
   partMeshes = {};
   PARTS.forEach(part => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: part.color,
-      roughness: 0.4,
-      metalness: 0.7,
-      emissive: 0x000000,
-    });
-    const geo = buildPartGeometry(part);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(...part.pos);
-    // Some parts (wings, diffuser) face a specific way
-    if (part.rotation) mesh.rotation.set(...part.rotation);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.userData.partId = part.id;
-    mesh.userData.baseColor = part.color;
-    mesh.userData.baseEmissive = 0x000000;
-    car.add(mesh);
-    partMeshes[part.id] = mesh;
+    const built = buildPartGeometry(part);
+    let node;
+    if (built.isGroup) {
+      // v3 multi-mesh: the Group already has child meshes with their own
+      // materials. Just attach the partId to the Group so raycast can
+      // walk up and find it.
+      node = built;
+    } else {
+      // v1 single-mesh: wrap the geometry in a Mesh with the part's base material.
+      const mat = new THREE.MeshStandardMaterial({
+        color: part.color,
+        roughness: 0.4,
+        metalness: 0.7,
+        emissive: 0x000000,
+      });
+      node = new THREE.Mesh(built, mat);
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
+    node.userData.partId = part.id;
+    node.userData.baseColor = part.color;
+    node.userData.baseEmissive = 0x000000;
+    node.position.set(...part.pos);
+    if (part.rotation) node.rotation.set(...part.rotation);
+    car.add(node);
+    partMeshes[part.id] = node;
   });
 
-  // -- Wheels (4 simple cylinders — v1 style, confirmed working on iOS) --
-  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.9 });
-  const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.25, 24);
+  // -- Wheels (4 compound assemblies: tyre + rim + hub) --
+  const tyreMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.95, metalness: 0.0 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0x222230, roughness: 0.4, metalness: 0.8 });
+  const hubMat = new THREE.MeshStandardMaterial({ color: 0x666670, roughness: 0.3, metalness: 0.9 });
+  const tyreGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.25, 24);
+  const rimGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.26, 18);
+  const hubGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.27, 12);
   const wheelPositions = [[-1.3, -0.25, 0.85], [-1.3, -0.25, -0.85], [1.3, -0.25, 0.85], [1.3, -0.25, -0.85]];
   wheelPositions.forEach(p => {
-    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-    wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(...p);
-    wheel.castShadow = true;
-    car.add(wheel);
+    const wheelGroup = new THREE.Group();
+    const tyre = new THREE.Mesh(tyreGeo, tyreMat);
+    tyre.rotation.z = Math.PI / 2;
+    tyre.castShadow = true;
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.rotation.z = Math.PI / 2;
+    const hub = new THREE.Mesh(hubGeo, hubMat);
+    hub.rotation.z = Math.PI / 2;
+    wheelGroup.add(tyre, rim, hub);
+    wheelGroup.position.set(...p);
+    car.add(wheelGroup);
   });
 
   scene.add(car);
@@ -2504,14 +2536,159 @@ function initThree() {
   animate();
 }
 
-/* GEOMETRY — v1 BoxGeometry primitives
-   Confirmed working on iOS Safari. v2 attempted "regulation-correct"
-   curves (TorusGeometry, ExtrudeGeometry, etc.) which broke iOS WebGL.
-   Reverted: each part is a BoxGeometry sized from PARTS[].size, and
-   the 12 tappable parts come from the PARTS array. Wheels are
-   4 simple cylinders, added in initThree(). */
+/* GEOMETRY — multi-mesh per part
+   Each part is composed of multiple BoxGeometry / CylinderGeometry
+   primitives that, together, form a recognizable 2026 F1 silhouette.
+   Curved primitives (TorusGeometry, ExtrudeGeometry) broke iOS WebGL
+   in v2; this approach is iOS-safe because every primitive is a
+   box, cylinder, or plane. v3 polish: tapered nose, multi-element
+   front wing, sculpted sidepods via stacked boxes, halo as a thin
+   ring (8-sided), proper wheel hubs. */
 function buildPartGeometry(part) {
-  return new THREE.BoxGeometry(...part.size);
+  switch (part.id) {
+    case 'frontWing': {
+      // Multi-element front wing: main plane + 2 stacked elements + endplates.
+      // Use a Group so the part has a single userData target.
+      const g = new THREE.Group();
+      const [w, , d] = part.size;
+      // Main element
+      g.add(boxMesh(w * 1.1, 0.04, d, 0x111118, [-w*0.05, 0, 0]));
+      // 2nd element (slightly smaller, behind/above)
+      g.add(boxMesh(w * 0.9, 0.04, d * 0.95, 0x1a1a22, [-w*0.1, 0.06, 0]));
+      // 3rd element (smallest, highest, flapped)
+      g.add(boxMesh(w * 0.7, 0.04, d * 0.85, 0x222233, [-w*0.2, 0.10, 0]));
+      // Endplates (vertical, on each side)
+      g.add(boxMesh(0.05, 0.18, d * 1.02, 0x2a2a35, [w*0.45, 0.05, 0]));
+      g.add(boxMesh(0.05, 0.18, d * 1.02, 0x2a2a35, [-w*0.55, 0.05, 0]));
+      return g;
+    }
+    case 'rearWing': {
+      // Main plane + upper element + endplates + center pillar
+      const g = new THREE.Group();
+      const [w, h, d] = part.size;
+      // Main element (lower)
+      g.add(boxMesh(w, 0.04, d, 0x111118, [0, -h*0.4, 0]));
+      // Upper element (smaller, offset back)
+      g.add(boxMesh(w * 0.85, 0.04, d * 0.9, 0x1a1a22, [0.05, h*0.05, 0]));
+      // Endplates
+      g.add(boxMesh(w * 1.05, h * 0.85, 0.05, 0x2a2a35, [0, 0, d*0.5]));
+      g.add(boxMesh(w * 1.05, h * 0.85, 0.05, 0x2a2a35, [0, 0, -d*0.5]));
+      return g;
+    }
+    case 'nose': {
+      // Tapered nose: stack of decreasing-width boxes from chassis to tip.
+      const g = new THREE.Group();
+      const [w, h, d] = part.size;
+      g.add(boxMesh(w, h, d, 0x222233, [0, 0, 0]));
+      g.add(boxMesh(w*0.7, h*0.9, d*0.9, 0x1f1f2a, [-w*0.4, 0, 0]));
+      g.add(boxMesh(w*0.45, h*0.8, d*0.8, 0x1c1c25, [-w*0.75, -0.02, 0]));
+      g.add(boxMesh(w*0.25, h*0.7, d*0.6, 0x1a1a22, [-w*1.05, -0.05, 0]));
+      return g;
+    }
+    case 'sidepodL':
+    case 'sidepodR': {
+      // Sculpted sidepod via 3 stacked boxes with decreasing height toward the rear
+      // (the regulation 2026 "tapered sidepod" look, in stacked-box form).
+      const g = new THREE.Group();
+      const [w, h, d] = part.size;
+      const sign = part.id === 'sidepodL' ? 1 : -1;
+      // Main body
+      g.add(boxMesh(w, h, d, 0x222233, [0, 0, sign*0]));
+      // Front intake (taller, narrows forward)
+      g.add(boxMesh(w*0.35, h*1.05, d*1.1, 0x2a2a35, [-w*0.32, 0.02, 0]));
+      // Rear shoulder (lower, tapers back)
+      g.add(boxMesh(w*0.4, h*0.7, d*0.9, 0x1a1a22, [w*0.3, -0.02, 0]));
+      return g;
+    }
+    case 'halo': {
+      // Halo as a thin frame: 2 uprights + a top bar + a fairing.
+      // Approximated with thin boxes. (A real halo is a single ring, but
+      // an 8-sided ring of boxes would also work; keeping it simple.)
+      const g = new THREE.Group();
+      g.add(boxMesh(0.04, 0.55, 0.04, 0x666670, [-0.25, 0.25, 0.18]));
+      g.add(boxMesh(0.04, 0.55, 0.04, 0x666670, [-0.25, 0.25, -0.18]));
+      g.add(boxMesh(0.04, 0.04, 0.5,  0x666670, [-0.25, 0.52, 0]));
+      // Front hoop
+      g.add(boxMesh(0.04, 0.04, 0.5,  0x666670, [0.05, 0.35, 0]));
+      // Front uprights
+      g.add(boxMesh(0.04, 0.25, 0.04, 0x666670, [0.05, 0.22, 0.18]));
+      g.add(boxMesh(0.04, 0.25, 0.04, 0x666670, [0.05, 0.22, -0.18]));
+      // Center fairing
+      g.add(boxMesh(0.35, 0.10, 0.30, 0x444450, [-0.10, 0.35, 0]));
+      return g;
+    }
+    case 'floor': {
+      // Floor + edge wing (raised lip along the sides)
+      const g = new THREE.Group();
+      const [w, h, d] = part.size;
+      g.add(boxMesh(w, h, d, 0x14141c, [0, 0, 0]));
+      // Edge wings (slight raised lips on each side)
+      g.add(boxMesh(w*0.95, h*0.8, 0.05, 0x1a1a22, [0, h*0.3, d*0.5]));
+      g.add(boxMesh(w*0.95, h*0.8, 0.05, 0x1a1a22, [0, h*0.3, -d*0.5]));
+      return g;
+    }
+    case 'diffuser': {
+      // Diffuser: a wedge — main body + 2 angled strakes
+      const g = new THREE.Group();
+      const [w, h, d] = part.size;
+      g.add(boxMesh(w, h, d, 0x1a1a22, [0, 0, 0]));
+      g.add(boxMesh(w*0.9, h*0.4, 0.04, 0x222233, [0, h*0.4, d*0.5]));
+      g.add(boxMesh(w*0.9, h*0.4, 0.04, 0x222233, [0, h*0.4, -d*0.5]));
+      return g;
+    }
+    case 'powerUnit': {
+      // V6 + turbo hint: main block + intake plenum on top
+      const g = new THREE.Group();
+      const [w, h, d] = part.size;
+      g.add(boxMesh(w, h*0.8, d, 0x2a2a35, [0, -h*0.1, 0]));
+      g.add(boxMesh(w*0.5, h*0.4, d*0.6, 0x3a3a45, [-w*0.15, h*0.45, 0]));
+      // Air intake horn (small box pointing up at front of PU)
+      g.add(boxMesh(0.15, 0.20, 0.15, 0x1a1a22, [-w*0.45, h*0.55, 0]));
+      return g;
+    }
+    case 'battery': {
+      // Battery pack: a flat slab with a connector strip on top
+      const g = new THREE.Group();
+      const [w, h, d] = part.size;
+      g.add(boxMesh(w, h, d, 0x884400, [0, 0, 0]));
+      // HV connector strip
+      g.add(boxMesh(w*0.3, 0.04, d*0.3, 0xffaa00, [0, h*0.5, 0]));
+      return g;
+    }
+    case 'suspF':
+    case 'suspR': {
+      // Push/pull-rod hint: a vertical arm + a horizontal rod
+      const g = new THREE.Group();
+      g.add(boxMesh(0.05, 0.35, 0.05, 0x888899, [0, 0, 0]));
+      g.add(boxMesh(0.30, 0.04, 0.04, 0x888899, [0, -0.05, 0]));
+      return g;
+    }
+    case 'brakeDuct': {
+      // Cylindrical duct + backing plate
+      const g = new THREE.Group();
+      g.add(new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.12, 0.25, 16),
+        new THREE.MeshStandardMaterial({ color: 0x444455, roughness: 0.5, metalness: 0.6 })
+      ));
+      g.add(boxMesh(0.30, 0.20, 0.04, 0x333344, [0, 0, 0.14]));
+      return g;
+    }
+    default:
+      // Fallback: single box (matches v1 behavior)
+      return new THREE.BoxGeometry(...part.size);
+  }
+}
+
+// Helper: a single Mesh with a MeshStandardMaterial, shadow flags on.
+function boxMesh(w, h, d, color, pos) {
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.6 })
+  );
+  if (pos) m.position.set(...pos);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
 }
 
 function onResize() {
@@ -2633,17 +2810,29 @@ function performRaycast() {
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(car.children, false);
-  // Reset emissive on all tappable parts
+  // recursive=true so we hit child meshes inside part Groups (v3 multi-mesh parts)
+  const hits = raycaster.intersectObjects(car.children, true);
+  // Reset emissive on all tappable parts (walk into Groups too)
   for (const id in partMeshes) {
-    partMeshes[id].material.emissive.setHex(0x000000);
+    partMeshes[id].traverse(child => {
+      if (child.isMesh && child.material) child.material.emissive.setHex(0x000000);
+    });
   }
   if (hits.length > 0) {
-    const m = hits[0].object;
-    if (m.userData.partId) {
-      m.material.emissive.setHex(0x224444);
+    // Walk up the parent chain to find the tappable part
+    let n = hits[0].object;
+    let partId = null;
+    while (n && !partId) {
+      if (n.userData && n.userData.partId) partId = n.userData.partId;
+      else n = n.parent;
+    }
+    if (partId) {
+      // Highlight the whole group, not just the hit mesh
+      partMeshes[partId].traverse(child => {
+        if (child.isMesh && child.material) child.material.emissive.setHex(0x224444);
+      });
       renderer.domElement.style.cursor = 'pointer';
-      hoveredPart = m.userData.partId;
+      hoveredPart = partId;
     } else {
       renderer.domElement.style.cursor = isDragging ? 'grabbing' : 'grab';
       hoveredPart = null;
@@ -2715,9 +2904,13 @@ function applyTeamLivery() {
   // Tweak: tint the sidepods + nose + floor edges with team color, keep mechanical bits neutral
   const tintIds = ['frontWing','rearWing','sidepodL','sidepodR','nose','diffuser'];
   tintIds.forEach(id => {
-    if (partMeshes[id]) {
-      partMeshes[id].material.color = color;
-    }
+    const node = partMeshes[id];
+    if (!node) return;
+    // Walk into the node (handles both Mesh and Group) and apply the color
+    // to every child mesh's material.
+    node.traverse(child => {
+      if (child.isMesh && child.material) child.material.color = color;
+    });
   });
 }
 
