@@ -772,7 +772,7 @@ a { color: inherit; text-decoration: none; }
 <script type="importmap">
 {
   "imports": {
-    "three": "https://esm.sh/three@0.160.0"
+    "three": "./vendor/three.module.js"
   }
 }
 </script>
@@ -800,8 +800,8 @@ a { color: inherit; text-decoration: none; }
   window.__f1ShowFatal = showFatal;
   window.addEventListener('error', function(e){
     var src = e.filename || '';
-    if (/esm\.sh|three/i.test(src) || /import|module|three/i.test(e.message || '')) {
-      showFatal('❌ Three.js failed to load from esm.sh<br>' +
+    if (/three/i.test(src) || /import|module|three/i.test(e.message || '')) {
+      showFatal('❌ Three.js failed to load<br>' +
                 'File: ' + src + '<br>' +
                 'Error: ' + (e.message || '(unknown)') + '<br>' +
                 'Network: ' + (navigator.onLine ? 'online' : 'offline') + '<br>' +
@@ -813,17 +813,17 @@ a { color: inherit; text-decoration: none; }
     var reason = (e.reason && (e.reason.message || String(e.reason))) || 'unknown';
     showFatal('❌ Unhandled error<br>' + reason);
   });
-  // Network-failure timeout. If the module never loads at all (e.g. esm.sh
-  // is blocked, DNS fails, or the phone is offline), no error event
-  // fires — but THREE will still be undefined after a few seconds. This
-  // poll catches that case.
+  // Network-failure timeout. If the module never loads at all (e.g. the
+  // importmap target is blocked, DNS fails, or the phone is offline), no
+  // error event fires — but THREE will still be undefined after a few
+  // seconds. This poll catches that case.
   setTimeout(function(){
     if (typeof window.THREE === 'undefined' && !document.getElementById('fatal-overlay')) {
       showFatal('❌ Three.js failed to load<br>' +
-                'Network: ' + (navigator.onLine ? 'online (but CDN unreachable?)' : 'offline') + '<br>' +
+                'Network: ' + (navigator.onLine ? 'online (but importmap target unreachable?)' : 'offline') + '<br>' +
                 'User-Agent: ' + navigator.userAgent + '<br>' +
                 'Time waited: 5s<br>' +
-                '<br>This usually means esm.sh is blocked or unreachable.<br>' +
+                '<br>This usually means the importmap target is blocked or unreachable.<br>' +
                 'Try: hard-refresh (pull down on iOS), check WiFi/cellular, or contact the network admin.');
     }
   }, 5000);
@@ -2312,7 +2312,7 @@ function initThree() {
       `Network: ${navigator.onLine ? 'online' : 'offline'}`,
       `User-Agent: ${ua}`,
       '',
-      'This usually means the esm.sh request timed out or was blocked.',
+      'This usually means the importmap target timed out or was blocked.',
       'Try: hard-refresh (pull down), check WiFi/cellular, or open in desktop Chrome first.',
     ]);
     return;
@@ -2830,8 +2830,8 @@ function showFatal(msg) {
   console.error('[F1 viewer] Fatal:', msg);
 }
 window.addEventListener('error', (e) => {
-  if (e.filename && /esm\.sh/.test(e.filename)) {
-    showFatal('❌ Three.js failed to load from esm.sh<br>' +
+  if (e.filename && /three|three\.module|esm\.sh|vendor/i.test(e.filename)) {
+    showFatal('❌ Three.js failed to load<br>' +
               'File: ' + e.filename + '<br>' +
               'Error: ' + (e.message || '(unknown)') + '<br>' +
               'Network: ' + (navigator.onLine ? 'online' : 'offline') + '<br>' +
