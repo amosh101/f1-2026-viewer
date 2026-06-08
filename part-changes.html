@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>F1 2026 — Part Changes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050507;
+    --surface: #0a0a0f;
+    --ink: #f0f0fa;
+    --ink-muted: rgba(240, 240, 250, 0.55);
+    --ink-faint: rgba(240, 240, 250, 0.18);
+    --ghost-bg: rgba(240, 240, 250, 0.06);
+    --ghost-bd: rgba(240, 240, 250, 0.22);
+    --ghost-bd-hi: rgba(240, 240, 250, 0.5);
+    --accent: #00d7b6;
+    --danger: #ff4d4d;
+    --ok: #46d39a;
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --t-fast: 180ms;
+    --t-med: 320ms;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+  body { min-height: 100svh; padding-bottom: env(safe-area-inset-bottom); }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* TOP BAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px calc(14px + env(safe-area-inset-top)) 18px;
+    background: linear-gradient(180deg, rgba(5,5,7,0.97), rgba(5,5,7,0.75));
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--ghost-bd);
+  }
+  .topbar .brand { display: flex; gap: 10px; align-items: center; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-muted); font-weight: 600; }
+  .topbar .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .topbar .back { padding: 6px 12px; border: 1px solid var(--ghost-bd); border-radius: 99px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+  .topbar .back:hover { background: var(--ghost-bg); }
+
+  /* PAGE */
+  .page { max-width: 920px; margin: 0 auto; padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 36px) 60px; }
+  .page-head { margin-bottom: 28px; }
+  .page-head h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; line-height: 0.95; margin-bottom: 8px; }
+  .page-head h1 em { font-style: normal; color: var(--ink-muted); }
+  .page-head p { color: var(--ink-muted); font-size: 14px; max-width: 56ch; }
+
+  /* METHODOLOGY */
+  .method {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--ghost-bg);
+    border: 1px solid var(--ghost-bd);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--ink-muted);
+    line-height: 1.45;
+  }
+  .method b { color: var(--ink); font-weight: 600; }
+
+  /* TEAM GRID */
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 24px; }
+  .team-card {
+    position: relative;
+    display: flex; flex-direction: column;
+    padding: 18px 16px;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--ink-faint);
+    text-align: left;
+    cursor: pointer;
+    transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+    overflow: hidden;
+  }
+  .team-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+    background: var(--team-color, var(--accent)); opacity: 0.85;
+  }
+  .team-card:hover { transform: translateY(-2px); border-color: var(--ghost-bd-hi); background: #10101a; }
+  .team-card.selected { border-color: var(--team-color, var(--accent)); background: #10101a; }
+  .team-card .name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .team-card .count { font-size: 24px; font-weight: 800; margin-top: 8px; }
+  .team-card .count-lbl { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-muted); }
+
+  /* DETAIL VIEW */
+  .detail { margin-top: 8px; }
+  .detail-head { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--ghost-bd); margin-bottom: 18px; }
+  .detail-head h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .detail-head .meta { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); }
+  .empty { padding: 32px 16px; text-align: center; color: var(--ink-muted); font-size: 13px; }
+  .empty b { color: var(--ink); }
+
+  /* CHANGE CARDS */
+  .change { padding: 16px 0; border-bottom: 1px solid var(--ink-faint); }
+  .change:last-child { border-bottom: 0; }
+  .change .row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .change .part { font-size: 17px; font-weight: 700; }
+  .change .round { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
+  .change .race { font-size: 12px; color: var(--ink-muted); margin-bottom: 8px; }
+  .change .desc { font-size: 13px; line-height: 1.5; }
+  .change .src { margin-top: 10px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); }
+  .change .src a { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 1px; }
+  .change .src a:hover { color: var(--ink); border-color: var(--ink); }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span> F1 2026 · Part Changes</div>
+    <a class="back" href="./index.html?v=back1">← HOME</a>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <h1>Part Changes. <em>By team. By race.</em></h1>
+      <p>Tracked car upgrades debuted this season. Tap a team to see the part, the race it debuted, and the source.</p>
+      <div class="method" id="methodology"></div>
+    </div>
+
+    <div class="team-grid" id="teamGrid"></div>
+    <div class="detail" id="detail"></div>
+  </main>
+
+  <script>
+    const TEAM_COLORS = {
+      mercedes: '#27e0c4', red_bull: '#1e5fb8', ferrari: '#dc0000',
+      mclaren: '#ff8000', aston_martin: '#006f62', alpine: '#0090ff',
+      williams: '#005aff', rb: '#6692ff', audi: '#bb0a30',
+      cadillac: '#8b8d8f', haas: '#b6babd',
+    };
+    const TEAM_DISPLAY = {
+      mercedes: 'Mercedes', red_bull: 'Red Bull', ferrari: 'Ferrari',
+      mclaren: 'McLaren', aston_martin: 'Aston Martin', alpine: 'Alpine',
+      williams: 'Williams', rb: 'RB', audi: 'Audi',
+      cadillac: 'Cadillac', haas: 'Haas',
+    };
+
+    let DATA = null;
+    let selectedTeam = null;
+
+    async function load() {
+      try {
+        const r = await fetch('./data/part-changes.json', { cache: 'no-cache' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        DATA = await r.json();
+        renderMethodology();
+        renderTeams();
+      } catch (e) {
+        document.getElementById('teamGrid').innerHTML =
+          `<div class="empty"><b>Could not load part-changes data.</b><br>${e.message}<br><br>This will populate after the first weekly scrape runs.</div>`;
+      }
+    }
+
+    function renderMethodology() {
+      const m = DATA._meta || {};
+      const rounds = (m.rounds_covered || []).join(' · ');
+      document.getElementById('methodology').innerHTML =
+        `<b>Methodology.</b> ${m.methodology || 'Part-change tracking.'} Coverage: ${rounds}. ` +
+        `Generated ${m.generated_utc ? new Date(m.generated_utc).toISOString().slice(0,16).replace('T', ' ') + ' UTC' : '—'}.`;
+    }
+
+    function renderTeams() {
+      const grid = document.getElementById('teamGrid');
+      grid.innerHTML = '';
+      const teamsSorted = [...DATA.teams].sort((a, b) => b.change_count - a.change_count);
+      teamsSorted.forEach(team => {
+        const card = document.createElement('button');
+        card.className = 'team-card' + (team.team_id === selectedTeam ? ' selected' : '');
+        card.style.setProperty('--team-color', TEAM_COLORS[team.team_id] || '#888');
+        card.innerHTML = `
+          <div class="name">${TEAM_DISPLAY[team.team_id] || team.team_name}</div>
+          <div class="count">${team.change_count}</div>
+          <div class="count-lbl">${team.change_count === 1 ? 'change' : 'changes'}</div>
+        `;
+        card.onclick = () => {
+          selectedTeam = team.team_id;
+          renderTeams();
+          renderDetail();
+          // Scroll the detail into view on iPhone
+          if (window.innerWidth < 720) {
+            document.getElementById('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    function renderDetail() {
+      const detail = document.getElementById('detail');
+      const team = DATA.teams.find(t => t.team_id === selectedTeam);
+      if (!team) { detail.innerHTML = ''; return; }
+      const color = TEAM_COLORS[team.team_id] || '#888';
+      const display = TEAM_DISPLAY[team.team_id] || team.team_name;
+      let html = `
+        <div class="detail-head" style="border-bottom-color: ${color}">
+          <h2 style="color: ${color}">${display}</h2>
+          <span class="meta">${team.change_count} ${team.change_count === 1 ? 'CHANGE' : 'CHANGES'}</span>
+        </div>
+      `;
+      if (team.changes.length === 0) {
+        html += `<div class="empty"><b>No tracked upgrades yet for ${display}.</b><br><br>Coverage is being grown by the press-release + F1-media scrape pipeline (planned for next sprint). Currently, only the most-cited upgrades from R6 Monaco are populated.</div>`;
+      } else {
+        team.changes.forEach(c => {
+          const src = c.source || {};
+          const dateStr = c.date || '';
+          const srcMeta = [src.outlet, src.author, src.date].filter(Boolean).join(' · ');
+          html += `
+            <div class="change">
+              <div class="row">
+                <div class="part">${c.part}</div>
+                <div class="round">R${c.round}</div>
+              </div>
+              <div class="race">${c.race} · ${dateStr}</div>
+              <div class="desc">${c.description}</div>
+              <div class="src">
+                Source: ${srcMeta ? srcMeta : '—'}
+                ${src.url ? ` · <a href="${src.url}" target="_blank" rel="noopener">read</a>` : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+      detail.innerHTML = html;
+    }
+
+    load();
+  </script>
+</body>
+</html>

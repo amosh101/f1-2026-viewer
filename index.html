@@ -204,6 +204,38 @@ a { color: inherit; text-decoration: none; }
 }
 .hero .quick .stat .k { font-size: 10px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; }
 .hero .quick .stat .v { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.hero .quick .stat .sub-stat { font-size: 10px; letter-spacing: 0.18em; color: var(--ink-muted); text-transform: uppercase; margin-top: 2px; }
+.hero .quick .data-stamp { font-size: 9px; letter-spacing: 0.22em; color: var(--ink-faint); text-transform: uppercase; align-self: center; margin-left: 6px; padding: 4px 8px; border: 1px solid var(--ink-faint); border-radius: 99px; }
+
+/* ---------- SEASON ACTIONS (home screen secondary buttons) ---------- */
+.season-actions {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.season-action {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: var(--ghost-bg);
+  border: 1px solid var(--ghost-bd);
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+  min-height: 110px;
+}
+.season-action:hover { background: var(--ghost-bg-hi); border-color: var(--ghost-bd-hi); transform: translateY(-2px); }
+.season-action:active { transform: scale(0.98); }
+.season-action .k { font-size: 10px; letter-spacing: 0.22em; color: var(--ink-muted); text-transform: uppercase; }
+.season-action .v { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; }
+.season-action .sub { font-size: 11px; color: var(--ink-muted); margin-top: 4px; line-height: 1.35; }
+.season-action .arrow { position: absolute; top: 18px; right: 20px; font-size: 22px; color: var(--ink-muted); font-weight: 300; }
+@media (max-width: 540px) {
+  .season-actions { grid-template-columns: 1fr; }
+}
 
 /* ---------- TEAM GRID ---------- */
 .team-grid-wrap {
@@ -666,9 +698,28 @@ a { color: inherit; text-decoration: none; }
       <p class="lede">Eleven teams, twenty-two drivers, one rulebook rewritten from scratch. Tap a team to see the car, the drivers, the season so far — and which 2026 technical regulation makes them fast.</p>
       <div class="quick">
         <div class="stat"><div class="k">RACES RUN</div><div class="v" id="statRaces">5</div></div>
-        <div class="stat"><div class="k">LEADER</div><div class="v" id="statLeader">Antonelli</div></div>
-        <div class="stat"><div class="k">POLE SITTOS</div><div class="v">Live</div></div>
+        <div class="stat">
+          <div class="k">CHAMPIONSHIP LEADER</div>
+          <div class="v" id="statLeader">Antonelli</div>
+          <div class="sub-stat" id="statLeaderSub">Mercedes</div>
+        </div>
+        <div class="stat"><div class="k">POLE SITTER</div><div class="v" id="statPoles">—</div></div>
         <div class="stat"><div class="k">REG REWRITE</div><div class="v">+ 70%</div></div>
+        <div class="data-stamp" id="dataUpdated">DATA · STATIC</div>
+      </div>
+      <div class="season-actions">
+        <button class="season-action" id="btnPartChanges" data-go="part-changes">
+          <div class="k">PART CHANGES</div>
+          <div class="v" id="partChangesTotal">—</div>
+          <div class="sub">Tracked team upgrades · R1 → latest</div>
+          <span class="arrow">›</span>
+        </button>
+        <button class="season-action" id="btnCarIssues" data-go="car-issues">
+          <div class="k">CAR ISSUES</div>
+          <div class="v" id="carIssuesTotal">—</div>
+          <div class="sub">Mechanical DNFs across the season</div>
+          <span class="arrow">›</span>
+        </button>
       </div>
     </div>
     <div class="team-grid-wrap">
@@ -867,9 +918,84 @@ window.__threeImported = true;
 /* =========================================================
    F1 2026 Viewer — inline runtime.
    Single self-contained file: no build step, no node_modules.
-   Data is fetched from ./data/*.json (served as static files).
-   ========================================================= */
+========================================================= */
 
+/* ---------- DATA LOAD (async, runs at boot) ----------
+   The hardcoded SEASON_SUMMARY below is a fallback. At module
+   load we fetch ./data/latest.json + ./data/season-summary.json
+   + ./data/constructor-standings-rN.json + ./data/driver-standings-rN.json
+   and OVERRIDE the in-memory data so the home screen reflects the
+   Sunday 23:00 CAT cron's output.
+
+   The home splash waits 1.4s, so a local-network fetch is plenty fast.
+   If the fetch fails (e.g. no cron run yet, or static server down), we
+   fall back to the hardcoded constants — the page still works, just stale. */
+let LATEST_ROUND = 6;            // updated by fetchLatest() below
+let LAST_UPDATED_UTC = null;     // human-readable "last refreshed" string
+let CONSTRUCTOR_STANDINGS = [];  // [{position, points, wins, team: {id, name}}, ...]
+let DRIVER_STANDINGS = [];       // [{position, points, wins, driver: {id, familyName}, team: {id, name}}, ...]
+let PART_CHANGES = null;         // data/part-changes.json (hand-curated seed)
+let CAR_ISSUES = null;           // data/car-issues-dnf.json (auto-derived)
+
+async function fetchJSON(path) {
+  const res = await fetch(path, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+  return res.json();
+}
+
+async function refreshLiveData() {
+  try {
+    const latest = await fetchJSON('./data/latest.json');
+    LATEST_ROUND = latest.round || LATEST_ROUND;
+    LAST_UPDATED_UTC = latest.updated_utc || null;
+  } catch (e) {
+    console.warn('[data] latest.json not available, using hardcoded round', e);
+  }
+  try {
+    const summary = await fetchJSON('./data/season-summary.json');
+    if (summary && typeof summary === 'object') {
+      Object.keys(summary).forEach(k => { SEASON_SUMMARY[k] = summary[k]; });
+      console.log(`[data] season-summary.json: ${Object.keys(summary).length} rounds loaded`);
+    }
+  } catch (e) {
+    console.warn('[data] season-summary.json not available, using hardcoded', e);
+  }
+  try {
+    const cs = await fetchJSON(`./data/constructor-standings-r${LATEST_ROUND}.json`);
+    CONSTRUCTOR_STANDINGS = cs?.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings || [];
+    console.log(`[data] constructor-standings-r${LATEST_ROUND}.json: ${CONSTRUCTOR_STANDINGS.length} teams`);
+  } catch (e) {
+    console.warn(`[data] constructor-standings-r${LATEST_ROUND}.json not available`, e);
+  }
+  try {
+    const ds = await fetchJSON(`./data/driver-standings-r${LATEST_ROUND}.json`);
+    DRIVER_STANDINGS = ds?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings || [];
+    console.log(`[data] driver-standings-r${LATEST_ROUND}.json: ${DRIVER_STANDINGS.length} drivers`);
+  } catch (e) {
+    console.warn(`[data] driver-standings-r${LATEST_ROUND}.json not available`, e);
+  }
+  try {
+    PART_CHANGES = await fetchJSON('./data/part-changes.json');
+    console.log(`[data] part-changes.json: ${PART_CHANGES.teams.length} teams, ${PART_CHANGES.teams.reduce((s,t) => s + t.change_count, 0)} changes`);
+  } catch (e) {
+    console.warn('[data] part-changes.json not available', e);
+  }
+  try {
+    CAR_ISSUES = await fetchJSON('./data/car-issues-dnf.json');
+    console.log(`[data] car-issues-dnf.json: ${CAR_ISSUES.teams.length} teams, ${CAR_ISSUES.teams.reduce((s,t) => s + t.issue_count, 0)} issues`);
+  } catch (e) {
+    console.warn('[data] car-issues-dnf.json not available', e);
+  }
+}
+
+// Fire-and-forget: started immediately, completes well before the 1.4s splash
+// timer expires. renderTeams() reads LATEST_ROUND/STANDINGS after a re-render.
+refreshLiveData().then(() => {
+  // If renderTeams already ran with stale data, re-run it now.
+  if (typeof renderTeams === 'function' && state.screen === 'teams') {
+    renderTeams();
+  }
+});
 /* ---------- DATA LAYER (inlined — no fetch needed) ----------
    These come from the cached ./data/*.json files. Inlining them
    removes a network round-trip on first paint and makes the
@@ -2228,22 +2354,85 @@ function renderTeams() {
     grid.appendChild(card);
   });
   $('#teamCount').textContent = `${CONSTRUCTORS.length} TEAMS · 2026`;
-  // Update live stats
+  // Update live stats — pulled from data/*.json via refreshLiveData() at boot
   const completedRaces = SEASON_SUMMARY ? Object.keys(SEASON_SUMMARY).length : 0;
   $('#statRaces').textContent = completedRaces;
-  // Find current leader: who has the most wins in podium position 1?
-  const winCounts = {};
+
+  // LEADER stat: championship P1 driver (from driver-standings) or constructor
+  // (from constructor-standings), whichever is loaded. Falls back to "—" if
+  // neither standings file loaded yet.
+  const driverLeader = DRIVER_STANDINGS[0];
+  const constructorLeader = CONSTRUCTOR_STANDINGS[0];
+  if (driverLeader) {
+    const pts = driverLeader.points;
+    const famName = driverLeader.Driver.familyName;
+    const team = driverLeader.Constructors[0].name;
+    $('#statLeader').textContent = `${famName} · ${pts} PTS`;
+    $('#statLeaderSub').textContent = team;
+  } else if (constructorLeader) {
+    $('#statLeader').textContent = `${constructorLeader.Constructor.name} · ${constructorLeader.points} PTS`;
+    $('#statLeaderSub').textContent = 'CONSTRUCTOR';
+  } else {
+    $('#statLeader').textContent = '—';
+    $('#statLeaderSub').textContent = '';
+  }
+
+  // POLE SITTERS stat: who has the most poles in season-summary?
+  const poleCounts = {};
   if (SEASON_SUMMARY) {
     Object.values(SEASON_SUMMARY).forEach(r => {
-      if (r.podium && r.podium[0]) {
-        const name = r.podium[0].driver;
-        winCounts[name] = (winCounts[name] || 0) + 1;
+      if (r.pole && r.pole.driver) {
+        poleCounts[r.pole.driver] = (poleCounts[r.pole.driver] || 0) + 1;
       }
     });
   }
-  const leader = Object.entries(winCounts).sort((a,b) => b[1]-a[1])[0];
-  $('#statLeader').textContent = leader ? `${leader[0]} (${leader[1]})` : '—';
+  const poleLeader = Object.entries(poleCounts).sort((a, b) => b[1] - a[1])[0];
+  if (poleLeader) {
+    $('#statPoles').textContent = `${poleLeader[0]} (${poleLeader[1]})`;
+  } else {
+    $('#statPoles').textContent = '—';
+  }
+
+  // Round pill: completed rounds / total season
   $('#roundPill').textContent = `R${completedRaces} / 22`;
+
+  // Last-updated timestamp, if available
+  if (LAST_UPDATED_UTC) {
+    const ts = new Date(LAST_UPDATED_UTC);
+    const hh = String(ts.getUTCHours()).padStart(2, '0');
+    const mm = String(ts.getUTCMinutes()).padStart(2, '0');
+    const d = ts.toISOString().slice(0, 10);
+    $('#dataUpdated').textContent = `DATA · ${d} ${hh}:${mm} UTC`;
+  } else {
+    $('#dataUpdated').textContent = 'DATA · STATIC';
+  }
+
+  // Season-action buttons: totals
+  if (PART_CHANGES) {
+    const totalChanges = PART_CHANGES.teams.reduce((s, t) => s + t.change_count, 0);
+    $('#partChangesTotal').textContent = totalChanges;
+  } else {
+    $('#partChangesTotal').textContent = '—';
+  }
+  if (CAR_ISSUES) {
+    const totalIssues = CAR_ISSUES.teams.reduce((s, t) => s + t.issue_count, 0);
+    $('#carIssuesTotal').textContent = totalIssues;
+  } else {
+    $('#carIssuesTotal').textContent = '—';
+  }
+
+  // Home-screen season-action buttons (bind on every renderTeams call so
+  // the handlers exist the first time the user is on the home screen).
+  const btnPC = $('#btnPartChanges');
+  if (btnPC && !btnPC.__bound) {
+    btnPC.__bound = true;
+    btnPC.onclick = () => { window.location.href = './part-changes.html'; };
+  }
+  const btnCI = $('#btnCarIssues');
+  if (btnCI && !btnCI.__bound) {
+    btnCI.__bound = true;
+    btnCI.onclick = () => { window.location.href = './car-issues.html'; };
+  }
 }
 
 /* ---------- TEAM DETAIL ---------- */

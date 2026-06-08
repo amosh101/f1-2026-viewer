@@ -20,7 +20,15 @@
         "driver": "Leclerc",
         "team": "Ferrari"
       }
-    ]
+    ],
+    "pole": null,
+    "fastest_lap": {
+      "driver": "Verstappen",
+      "team": "Red Bull",
+      "time": "1:22.091",
+      "lap": "43"
+    },
+    "winner_time": "1:23:06.801"
   },
   "r2": {
     "round": 2,
@@ -43,7 +51,15 @@
         "driver": "Hamilton",
         "team": "Ferrari"
       }
-    ]
+    ],
+    "pole": null,
+    "fastest_lap": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:35.275",
+      "lap": "52"
+    },
+    "winner_time": "1:33:15.607"
   },
   "r3": {
     "round": 3,
@@ -66,7 +82,15 @@
         "driver": "Leclerc",
         "team": "Ferrari"
       }
-    ]
+    ],
+    "pole": null,
+    "fastest_lap": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:32.432",
+      "lap": "49"
+    },
+    "winner_time": "1:28:03.403"
   },
   "r4": {
     "round": 4,
@@ -89,7 +113,19 @@
         "driver": "Piastri",
         "team": "McLaren"
       }
-    ]
+    ],
+    "pole": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:27.798"
+    },
+    "fastest_lap": {
+      "driver": "Norris",
+      "team": "McLaren",
+      "time": "1:31.869",
+      "lap": "35"
+    },
+    "winner_time": "1:33:19.273"
   },
   "r5": {
     "round": 5,
@@ -112,6 +148,53 @@
         "driver": "Verstappen",
         "team": "Red Bull"
       }
-    ]
+    ],
+    "pole": {
+      "driver": "Russell",
+      "team": "Mercedes",
+      "time": "1:12.578"
+    },
+    "fastest_lap": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:14.210",
+      "lap": "68"
+    },
+    "winner_time": "1:28:15.758"
+  },
+  "r6": {
+    "round": 6,
+    "name": "Monaco Grand Prix",
+    "date": "2026-06-07",
+    "circuit": "Circuit de Monaco",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 3,
+        "driver": "Hadjar",
+        "team": "Red Bull"
+      }
+    ],
+    "pole": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:12.051"
+    },
+    "fastest_lap": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:13.481",
+      "lap": "76"
+    },
+    "winner_time": "2:23:31.243"
   }
 }

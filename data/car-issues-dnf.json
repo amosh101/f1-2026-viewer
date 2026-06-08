@@ -1,0 +1,392 @@
+{
+  "generated_utc": "2026-06-08T17:57:53+00:00",
+  "methodology": "Mechanical/electrical DNFs derived from official race classification status field. Excludes: Finished, Collision, Damage, Accident, Spun off, Withdrew, Did not start, +N Lap, 107% rule, Disqualified. Source: Jolpica Ergast mirror (F1 official).",
+  "rounds_covered": [
+    {
+      "round": 1,
+      "name": "Australian Grand Prix",
+      "date": "2026-03-08"
+    },
+    {
+      "round": 2,
+      "name": "Chinese Grand Prix",
+      "date": "2026-03-15"
+    },
+    {
+      "round": 3,
+      "name": "Japanese Grand Prix",
+      "date": "2026-03-29"
+    },
+    {
+      "round": 4,
+      "name": "Miami Grand Prix",
+      "date": "2026-05-03"
+    },
+    {
+      "round": 5,
+      "name": "Canadian Grand Prix",
+      "date": "2026-05-24"
+    },
+    {
+      "round": 6,
+      "name": "Monaco Grand Prix",
+      "date": "2026-06-07"
+    }
+  ],
+  "teams": [
+    {
+      "team_id": "aston_martin",
+      "issue_count": 6,
+      "issues": [
+        {
+          "round": 1,
+          "race": "Australian Grand Prix",
+          "date": "2026-03-08",
+          "driver_id": "alonso",
+          "driver_name": "Fernando Alonso",
+          "permanent_number": "14",
+          "car_number": "14",
+          "status": "Retired",
+          "laps_completed": "21",
+          "classification_position": "R"
+        },
+        {
+          "round": 2,
+          "race": "Chinese Grand Prix",
+          "date": "2026-03-15",
+          "driver_id": "alonso",
+          "driver_name": "Fernando Alonso",
+          "permanent_number": "14",
+          "car_number": "14",
+          "status": "Retired",
+          "laps_completed": "32",
+          "classification_position": "R"
+        },
+        {
+          "round": 2,
+          "race": "Chinese Grand Prix",
+          "date": "2026-03-15",
+          "driver_id": "stroll",
+          "driver_name": "Lance Stroll",
+          "permanent_number": "18",
+          "car_number": "18",
+          "status": "Retired",
+          "laps_completed": "9",
+          "classification_position": "R"
+        },
+        {
+          "round": 3,
+          "race": "Japanese Grand Prix",
+          "date": "2026-03-29",
+          "driver_id": "stroll",
+          "driver_name": "Lance Stroll",
+          "permanent_number": "18",
+          "car_number": "18",
+          "status": "Retired",
+          "laps_completed": "30",
+          "classification_position": "R"
+        },
+        {
+          "round": 5,
+          "race": "Canadian Grand Prix",
+          "date": "2026-05-24",
+          "driver_id": "alonso",
+          "driver_name": "Fernando Alonso",
+          "permanent_number": "14",
+          "car_number": "14",
+          "status": "Retired",
+          "laps_completed": "23",
+          "classification_position": "R"
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "stroll",
+          "driver_name": "Lance Stroll",
+          "permanent_number": "18",
+          "car_number": "18",
+          "status": "Retired",
+          "laps_completed": "56",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "red_bull",
+      "issue_count": 4,
+      "issues": [
+        {
+          "round": 1,
+          "race": "Australian Grand Prix",
+          "date": "2026-03-08",
+          "driver_id": "hadjar",
+          "driver_name": "Isack Hadjar",
+          "permanent_number": "6",
+          "car_number": "6",
+          "status": "Retired",
+          "laps_completed": "10",
+          "classification_position": "R"
+        },
+        {
+          "round": 2,
+          "race": "Chinese Grand Prix",
+          "date": "2026-03-15",
+          "driver_id": "max_verstappen",
+          "driver_name": "Max Verstappen",
+          "permanent_number": "3",
+          "car_number": "3",
+          "status": "Retired",
+          "laps_completed": "45",
+          "classification_position": "R"
+        },
+        {
+          "round": 4,
+          "race": "Miami Grand Prix",
+          "date": "2026-05-03",
+          "driver_id": "hadjar",
+          "driver_name": "Isack Hadjar",
+          "permanent_number": "6",
+          "car_number": "6",
+          "status": "Retired",
+          "laps_completed": "4",
+          "classification_position": "R"
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "max_verstappen",
+          "driver_name": "Max Verstappen",
+          "permanent_number": "3",
+          "car_number": "3",
+          "status": "Retired",
+          "laps_completed": "0",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "cadillac",
+      "issue_count": 3,
+      "issues": [
+        {
+          "round": 1,
+          "race": "Australian Grand Prix",
+          "date": "2026-03-08",
+          "driver_id": "bottas",
+          "driver_name": "Valtteri Bottas",
+          "permanent_number": "77",
+          "car_number": "77",
+          "status": "Retired",
+          "laps_completed": "15",
+          "classification_position": "R"
+        },
+        {
+          "round": 5,
+          "race": "Canadian Grand Prix",
+          "date": "2026-05-24",
+          "driver_id": "perez",
+          "driver_name": "Sergio Pérez",
+          "permanent_number": "11",
+          "car_number": "11",
+          "status": "Retired",
+          "laps_completed": "39",
+          "classification_position": "R"
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "bottas",
+          "driver_name": "Valtteri Bottas",
+          "permanent_number": "77",
+          "car_number": "77",
+          "status": "Retired",
+          "laps_completed": "15",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "haas",
+      "issue_count": 2,
+      "issues": [
+        {
+          "round": 3,
+          "race": "Japanese Grand Prix",
+          "date": "2026-03-29",
+          "driver_id": "bearman",
+          "driver_name": "Oliver Bearman",
+          "permanent_number": "87",
+          "car_number": "87",
+          "status": "Retired",
+          "laps_completed": "20",
+          "classification_position": "R"
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "bearman",
+          "driver_name": "Oliver Bearman",
+          "permanent_number": "87",
+          "car_number": "87",
+          "status": "Retired",
+          "laps_completed": "27",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "mclaren",
+      "issue_count": 2,
+      "issues": [
+        {
+          "round": 5,
+          "race": "Canadian Grand Prix",
+          "date": "2026-05-24",
+          "driver_id": "norris",
+          "driver_name": "Lando Norris",
+          "permanent_number": "1",
+          "car_number": "1",
+          "status": "Retired",
+          "laps_completed": "38",
+          "classification_position": "R"
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "norris",
+          "driver_name": "Lando Norris",
+          "permanent_number": "1",
+          "car_number": "1",
+          "status": "Retired",
+          "laps_completed": "43",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "williams",
+      "issue_count": 2,
+      "issues": [
+        {
+          "round": 5,
+          "race": "Canadian Grand Prix",
+          "date": "2026-05-24",
+          "driver_id": "albon",
+          "driver_name": "Alexander Albon",
+          "permanent_number": "23",
+          "car_number": "23",
+          "status": "Retired",
+          "laps_completed": "11",
+          "classification_position": "R"
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "sainz",
+          "driver_name": "Carlos Sainz",
+          "permanent_number": "55",
+          "car_number": "55",
+          "status": "Retired",
+          "laps_completed": "70",
+          "classification_position": "16"
+        }
+      ]
+    },
+    {
+      "team_id": "alpine",
+      "issue_count": 1,
+      "issues": [
+        {
+          "round": 4,
+          "race": "Miami Grand Prix",
+          "date": "2026-05-03",
+          "driver_id": "gasly",
+          "driver_name": "Pierre Gasly",
+          "permanent_number": "10",
+          "car_number": "10",
+          "status": "Retired",
+          "laps_completed": "4",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "audi",
+      "issue_count": 1,
+      "issues": [
+        {
+          "round": 4,
+          "race": "Miami Grand Prix",
+          "date": "2026-05-03",
+          "driver_id": "hulkenberg",
+          "driver_name": "Nico Hülkenberg",
+          "permanent_number": "27",
+          "car_number": "27",
+          "status": "Retired",
+          "laps_completed": "7",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "ferrari",
+      "issue_count": 1,
+      "issues": [
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "leclerc",
+          "driver_name": "Charles Leclerc",
+          "permanent_number": "16",
+          "car_number": "16",
+          "status": "Retired",
+          "laps_completed": "64",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "mercedes",
+      "issue_count": 1,
+      "issues": [
+        {
+          "round": 5,
+          "race": "Canadian Grand Prix",
+          "date": "2026-05-24",
+          "driver_id": "russell",
+          "driver_name": "George Russell",
+          "permanent_number": "63",
+          "car_number": "63",
+          "status": "Retired",
+          "laps_completed": "29",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
+      "team_id": "rb",
+      "issue_count": 1,
+      "issues": [
+        {
+          "round": 4,
+          "race": "Miami Grand Prix",
+          "date": "2026-05-03",
+          "driver_id": "lawson",
+          "driver_name": "Liam Lawson",
+          "permanent_number": "30",
+          "car_number": "30",
+          "status": "Retired",
+          "laps_completed": "6",
+          "classification_position": "R"
+        }
+      ]
+    }
+  ]
+}

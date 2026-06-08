@@ -1,0 +1,120 @@
+{
+  "_meta": {
+    "generated_utc": "2026-06-08T18:00:00+00:00",
+    "methodology": "Hand-curated from F1 media (The Race, RaceFans, Formula1.com, Motorsport.com). Each entry cites the source URL. Coverage is intentionally thin because part-change tracking requires a dedicated press-release scrape pipeline — planned for next sprint.",
+    "note": "This file will be grown automatically by the upcoming team-press-release + F1-media scrape (build_part_changes.py, planned). Until then, only the most-cited upgrades from R6 Monaco are included.",
+    "rounds_covered": ["R1", "R2", "R3", "R4", "R5", "R6"]
+  },
+  "teams": [
+    {
+      "team_id": "mercedes",
+      "team_name": "Mercedes",
+      "change_count": 2,
+      "changes": [
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "part": "Floor",
+          "description": "New floor edge and diffuser geometry for the W17. Part of Mercedes' ongoing push to recover rear-end downforce lost in low-speed corners after the 2026 aero reset.",
+          "source": {
+            "outlet": "The Race",
+            "headline": "Everything we learned at the 2026 Monaco Grand Prix",
+            "author": "Mark Hughes, Scott Mitchell-Malm",
+            "date": "2026-06-08",
+            "url": "https://www.the-race.com/formula-1/everything-we-learned-at-the-2026-monaco-grand-prix/"
+          }
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "part": "Front Suspension",
+          "description": "Revised front suspension geometry aimed at improving front-end bite on kerbs — a key weakness identified in the prior four rounds.",
+          "source": {
+            "outlet": "The Race",
+            "headline": "Everything we learned at the 2026 Monaco Grand Prix",
+            "author": "Mark Hughes, Scott Mitchell-Malm",
+            "date": "2026-06-08",
+            "url": "https://www.the-race.com/formula-1/everything-we-learned-at-the-2026-monaco-grand-prix/"
+          }
+        }
+      ]
+    },
+    {
+      "team_id": "ferrari",
+      "team_name": "Ferrari",
+      "change_count": 1,
+      "changes": [
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "part": "Rear Suspension",
+          "description": "New rear-suspension pull-rod design optimised for traction out of low-speed corners, addressing a recurring complaint from Hamilton and Leclerc through the early season.",
+          "source": {
+            "outlet": "The Race",
+            "headline": "Everything we learned at the 2026 Monaco Grand Prix",
+            "author": "Mark Hughes, Scott Mitchell-Malm",
+            "date": "2026-06-08",
+            "url": "https://www.the-race.com/formula-1/everything-we-learned-at-the-2026-monaco-grand-prix/"
+          }
+        }
+      ]
+    },
+    {
+      "team_id": "red_bull",
+      "team_name": "Red Bull",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "mclaren",
+      "team_name": "McLaren",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "aston_martin",
+      "team_name": "Aston Martin",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "alpine",
+      "team_name": "Alpine",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "williams",
+      "team_name": "Williams",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "rb",
+      "team_name": "RB",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "audi",
+      "team_name": "Audi",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "cadillac",
+      "team_name": "Cadillac",
+      "change_count": 0,
+      "changes": []
+    },
+    {
+      "team_id": "haas",
+      "team_name": "Haas",
+      "change_count": 0,
+      "changes": []
+    }
+  ]
+}
