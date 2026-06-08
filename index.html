@@ -715,7 +715,7 @@ a { color: inherit; text-decoration: none; }
         -->
         <div id="diag" style="display:none;position:absolute;top:60px;left:16px;right:16px;z-index:100;padding:14px 16px;border-radius:10px;background:rgba(255,77,77,0.12);border:1px solid rgba(255,77,77,0.45);color:#ffb4b4;font:12px/1.5 ui-monospace,Menlo,monospace;word-break:break-word;pointer-events:none;"></div>
         <div class="hud">
-          <div class="ttl"><span class="acc" id="hudTeam">MERCEDES</span> · W17 BASELINE</div>
+          <div class="ttl"><span class="acc" id="hudTeam">MERCEDES</span> · <span id="hudChassis">F1 W17</span></div>
           <div class="sub">2026 TECHNICAL REGULATION REFERENCE</div>
         </div>
         <div class="footer-hint">
@@ -902,67 +902,78 @@ const CONSTRUCTORS = [
     "constructorId": "alpine",
     "url": "https://en.wikipedia.org/wiki/Alpine_F1_Team",
     "name": "Alpine F1 Team",
-    "nationality": "French"
+    "nationality": "French",
+    "chassis": "A526"
   },
   {
     "constructorId": "aston_martin",
     "url": "https://en.wikipedia.org/wiki/Aston_Martin_in_Formula_One",
     "name": "Aston Martin",
-    "nationality": "British"
+    "nationality": "British",
+    "chassis": "AMR26"
   },
   {
     "constructorId": "audi",
     "url": "https://en.wikipedia.org/wiki/Audi_in_Formula_One",
     "name": "Audi",
-    "nationality": "German"
+    "nationality": "German",
+    "chassis": "R26"
   },
   {
     "constructorId": "cadillac",
     "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
     "name": "Cadillac F1 Team",
-    "nationality": "American"
+    "nationality": "American",
+    "chassis": "MAC-26"
   },
   {
     "constructorId": "ferrari",
     "url": "https://en.wikipedia.org/wiki/Scuderia_Ferrari",
     "name": "Ferrari",
-    "nationality": "Italian"
+    "nationality": "Italian",
+    "chassis": "SF-26"
   },
   {
     "constructorId": "haas",
     "url": "https://en.wikipedia.org/wiki/Haas_F1_Team",
     "name": "Haas F1 Team",
-    "nationality": "American"
+    "nationality": "American",
+    "chassis": "VF-26"
   },
   {
     "constructorId": "mclaren",
     "url": "https://en.wikipedia.org/wiki/McLaren",
     "name": "McLaren",
-    "nationality": "British"
+    "nationality": "British",
+    "chassis": "MCL40"
   },
   {
     "constructorId": "mercedes",
     "url": "https://en.wikipedia.org/wiki/Mercedes-Benz_in_Formula_One",
     "name": "Mercedes",
-    "nationality": "German"
+    "nationality": "German",
+    "chassis": "F1 W17"
   },
   {
     "constructorId": "rb",
     "url": "https://en.wikipedia.org/wiki/Racing_Bulls",
     "name": "RB F1 Team",
-    "nationality": "Italian"
+    "nationality": "Italian",
+    "chassis": "VCARB 03"
   },
   {
     "constructorId": "red_bull",
     "url": "https://en.wikipedia.org/wiki/Red_Bull_Racing",
     "name": "Red Bull",
-    "nationality": "Austrian"
+    "nationality": "Austrian",
+    "chassis": "RB22"
   },
   {
     "constructorId": "williams",
     "url": "https://en.wikipedia.org/wiki/Williams_Racing",
     "name": "Williams",
-    "nationality": "British"
+    "nationality": "British",
+    "chassis": "FW48"
   }
 ];
 
@@ -2685,6 +2696,7 @@ function renderCarView() {
   applyTeamLivery();
   const team = CONSTRUCTORS.find(c => c.constructorId === state.selectedTeam);
   $('#hudTeam').textContent = team ? team.name.toUpperCase() : 'MERCEDES';
+  $('#hudChassis').textContent = team && team.chassis ? team.chassis : '—';
   // Parts list
   const list = $('#partsList');
   list.innerHTML = '';
