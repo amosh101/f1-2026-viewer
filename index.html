@@ -55,7 +55,10 @@ a { color: inherit; text-decoration: none; }
 }
 .screen {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   padding: clamp(20px, 4vw, 56px);
@@ -64,6 +67,15 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(8px);
   transition: opacity var(--t-med) var(--ease), transform var(--t-med) var(--ease);
   will-change: opacity, transform;
+  /* iOS Safari: each screen is its own scroll container.
+     -webkit-overflow-scrolling: touch enables the rubber-band scroll.
+     overscroll-behavior: contain stops the bounce from triggering page-level gestures. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* Safe-area inset for notched iPhones — keep content out of the bottom bar. */
+  padding-bottom: calc(clamp(20px, 4vw, 56px) + env(safe-area-inset-bottom, 0px));
 }
 .screen.active { opacity: 1; pointer-events: auto; transform: none; }
 
@@ -2268,70 +2280,17 @@ function initThree() {
     partMeshes[part.id] = mesh;
   });
 
-  // -- Chassis / monocoque (central spine — not in the 13 tappable, but the
-  //    visual anchor everything else attaches to) --
-  const chassisMat = new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.5, metalness: 0.6 });
-  const chassis = new THREE.Mesh(buildChassisGeometry(), chassisMat);
-  chassis.castShadow = true;
-  chassis.receiveShadow = true;
-  car.add(chassis);
-
-  // -- Airbox + air intake horn (the snorkel above the driver) --
-  const airboxMat = new THREE.MeshStandardMaterial({ color: 0x16161c, roughness: 0.45, metalness: 0.7 });
-  const airbox = new THREE.Mesh(buildAirboxGeometry(), airboxMat);
-  airbox.castShadow = true;
-  car.add(airbox);
-
-  // -- Wheels (4 cylinders, base) + 2026-mandated wheel covers (decorative) --
+  // -- Wheels (4 simple cylinders — v1 style, confirmed working on iOS) --
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.9 });
-  const wheelCoverMat = new THREE.MeshStandardMaterial({ color: 0x0e0e14, roughness: 0.5, metalness: 0.5 });
+  const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.25, 24);
   const wheelPositions = [[-1.3, -0.25, 0.85], [-1.3, -0.25, -0.85], [1.3, -0.25, 0.85], [1.3, -0.25, -0.85]];
   wheelPositions.forEach(p => {
-    // Wheel (tire)
-    const wheelGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.28, 32);
     const wheel = new THREE.Mesh(wheelGeo, wheelMat);
     wheel.rotation.z = Math.PI / 2;
     wheel.position.set(...p);
     wheel.castShadow = true;
     car.add(wheel);
-    // 2026-mandated wheel cover (outer disc with 5-spoke pattern)
-    const coverGeo = buildWheelCoverGeometry();
-    const cover = new THREE.Mesh(coverGeo, wheelCoverMat);
-    cover.rotation.z = Math.PI / 2;
-    cover.position.set(p[0] + (p[0] > 0 ? 0.16 : -0.16), p[1], p[2]);
-    cover.castShadow = true;
-    car.add(cover);
   });
-
-  // -- Suspension arms (visual hint — front push-rod, rear pull-rod) --
-  const armMat = new THREE.MeshStandardMaterial({ color: 0x444450, roughness: 0.4, metalness: 0.85 });
-  const armGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.55, 8);
-  // Front arms (4 per corner, in 2 V-shaped pairs)
-  for (const zSign of [1, -1]) {
-    const a1 = new THREE.Mesh(armGeo, armMat);
-    a1.position.set(-1.0, 0.05, zSign * 0.55);
-    a1.rotation.set(0, 0, -0.45);
-    a1.castShadow = true;
-    car.add(a1);
-    const a2 = new THREE.Mesh(armGeo, armMat);
-    a2.position.set(-0.8, -0.05, zSign * 0.55);
-    a2.rotation.set(0, 0, 0.45);
-    a2.castShadow = true;
-    car.add(a2);
-  }
-  // Rear arms (pull-rod, lower CG)
-  for (const zSign of [1, -1]) {
-    const a3 = new THREE.Mesh(armGeo, armMat);
-    a3.position.set(1.1, -0.1, zSign * 0.55);
-    a3.rotation.set(0, 0, 0.35);
-    a3.castShadow = true;
-    car.add(a3);
-    const a4 = new THREE.Mesh(armGeo, armMat);
-    a4.position.set(1.3, 0.05, zSign * 0.55);
-    a4.rotation.set(0, 0, -0.35);
-    a4.castShadow = true;
-    car.add(a4);
-  }
 
   scene.add(car);
   // Orbit controls (smoothness version — see below)
@@ -2351,217 +2310,14 @@ function initThree() {
   animate();
 }
 
-/* ============================================================
-   GEOMETRY BUILDERS
-   Each part gets the geometry primitive that best matches its
-   real-world shape. Regulation-correct, not "real CAD" — see
-   SPEC.md "open follow-ups" for honest limitations.
-   ============================================================ */
-
-// Front wing: SVG-extruded top-down outline of the 2-element cascade
-// (2026 regs: narrower than 2024, with cascading elements and endplates)
-function buildFrontWingGeometry() {
-  const shape = new THREE.Shape();
-  // Top-down silhouette: a wide flat wing with rounded endplates
-  // Coordinate system: x = span (left-right), y = chord (front-back)
-  // Total chord (front-to-back) ~0.45, total span ~2.0
-  shape.moveTo(-1.0, 0);
-  shape.lineTo(-1.0, 0.05);   // endplate up
-  shape.lineTo(-0.95, 0.4);
-  shape.lineTo(0.95, 0.4);
-  shape.lineTo(1.0, 0.05);
-  shape.lineTo(1.0, 0);
-  shape.lineTo(0.95, -0.05);  // endplate down
-  shape.lineTo(-0.95, -0.05);
-  shape.closePath();
-  return new THREE.ExtrudeGeometry(shape, {
-    depth: 0.04, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2
-  });
-}
-
-// Rear wing: 2 stacked elements (main plane + flap) with curved endplates
-function buildRearWingGeometry() {
-  // Main plane: thin extrusion
-  const main = new THREE.Shape();
-  main.moveTo(-0.55, 0);
-  main.lineTo(-0.55, 0.06);
-  main.lineTo(0.55, 0.06);
-  main.lineTo(0.55, 0);
-  main.closePath();
-  const mainGeo = new THREE.ExtrudeGeometry(main, {
-    depth: 0.7, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
-  });
-  // The wing is thin and tall — the user is looking at it from the side
-  return mainGeo;
-}
-
-// Floor: long flat slab with a slight wedge (thinner at front, thicker at rear)
-// Built as a 2D shape extruded along x to give it a teardrop plan view
-function buildFloorGeometry() {
-  const shape = new THREE.Shape();
-  // Plan view: long teardrop, narrowest at front, widest just before the rear axle
-  shape.moveTo(-2.0, 0);
-  shape.quadraticCurveTo(-1.8, 0.35, -1.0, 0.55);
-  shape.quadraticCurveTo(0, 0.7, 1.0, 0.55);
-  shape.quadraticCurveTo(1.8, 0.35, 2.0, 0);
-  shape.quadraticCurveTo(1.8, -0.35, 1.0, -0.55);
-  shape.quadraticCurveTo(0, -0.7, -1.0, -0.55);
-  shape.quadraticCurveTo(-1.8, -0.35, -2.0, 0);
-  return new THREE.ExtrudeGeometry(shape, {
-    depth: 0.06, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
-  });
-}
-
-// Sidepod: tapered horizontal "shoe" shape, sloping down to the floor
-function buildSidepodGeometry(side) {
-  const shape = new THREE.Shape();
-  // Side view (from outside the car looking in): a fat teardrop tapering down to a point
-  shape.moveTo(-1.2, 0.45);
-  shape.quadraticCurveTo(-1.0, 0.5, -0.5, 0.45);
-  shape.quadraticCurveTo(0.4, 0.35, 1.1, 0.15);
-  shape.quadraticCurveTo(1.2, 0.0, 1.05, -0.15);
-  shape.quadraticCurveTo(0.5, -0.3, -0.5, -0.3);
-  shape.quadraticCurveTo(-1.0, -0.25, -1.2, -0.2);
-  shape.quadraticCurveTo(-1.25, 0.1, -1.2, 0.45);
-  // Mirrored for the right side
-  if (side === 'R') {
-    for (let i = 0; i < shape.curves.length; i++) {
-      const c = shape.curves[i];
-      if (c.v1) c.v1.y *= -1;
-      if (c.v2) c.v2.y *= -1;
-    }
-  }
-  return new THREE.ExtrudeGeometry(shape, {
-    depth: 0.35, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 3
-  });
-}
-
-// Halo: a proper torus, oriented around the cockpit
-function buildHaloGeometry() {
-  const geo = new THREE.TorusGeometry(0.42, 0.045, 12, 32, Math.PI);
-  // Default torus is in the XY plane, so rotate to lay flat across the car
-  geo.rotateX(Math.PI / 2);
-  return geo;
-}
-
-// Nose: tapered cone, narrow at front, wide where it meets the chassis
-function buildNoseGeometry() {
-  // A custom buffer geometry: trapezoidal prism
-  const geo = new THREE.CylinderGeometry(0.05, 0.18, 0.7, 4, 1, false);
-  // Rotate so the long axis points in -x (toward the front of the car)
-  geo.rotateZ(Math.PI / 2);
-  return geo;
-}
-
-// Suspension upright: short cylinder + a small box for the hub
-function buildSuspensionGeometry() {
-  // Cylinder along z, short
-  const geo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16);
-  geo.rotateX(Math.PI / 2);
-  return geo;
-}
-
-// Power unit: the bell-housing/turbine area is roughly conical with a flat top
-// (the actual engine bay is a complex shape, this is a stylised representation)
-function buildPowerUnitGeometry() {
-  const geo = new THREE.CylinderGeometry(0.25, 0.35, 0.7, 8);
-  geo.rotateX(Math.PI / 2);
-  return geo;
-}
-
-// Battery: this is genuinely a box in real F1 (lithium cells in a rectangular case)
-function buildBatteryGeometry() {
-  return new THREE.BoxGeometry(1.0, 0.16, 0.45);
-}
-
-// Brake duct: short fat cylinder with a hollow bore (use a torus for the rim)
-function buildBrakeDuctGeometry() {
-  const outer = new THREE.CylinderGeometry(0.18, 0.18, 0.25, 24);
-  outer.rotateX(Math.PI / 2);
-  return outer;
-}
-
-// Diffuser: angled ramp, wider at top, narrower at bottom (rear of car)
-function buildDiffuserGeometry() {
-  // Trapezoidal extrusion: a 2D shape extruded along the x-axis
-  const shape = new THREE.Shape();
-  shape.moveTo(0, 0.5);
-  shape.lineTo(0, -0.5);
-  shape.lineTo(0.35, -0.3);
-  shape.lineTo(0.35, 0.3);
-  shape.closePath();
-  return new THREE.ExtrudeGeometry(shape, {
-    depth: 0.95, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
-  });
-}
-
-// Chassis / monocoque: long curved spine, like an arched banana
-function buildChassisGeometry() {
-  const shape = new THREE.Shape();
-  // Side view of the chassis: arched profile
-  shape.moveTo(-0.6, 0.1);
-  shape.quadraticCurveTo(-0.4, 0.3, 0, 0.3);
-  shape.quadraticCurveTo(0.4, 0.3, 0.6, 0.15);
-  shape.quadraticCurveTo(0.7, 0, 0.6, -0.15);
-  shape.quadraticCurveTo(0.4, -0.25, 0, -0.25);
-  shape.quadraticCurveTo(-0.4, -0.25, -0.6, -0.1);
-  shape.closePath();
-  return new THREE.ExtrudeGeometry(shape, {
-    depth: 2.0, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 3
-  });
-}
-
-// Airbox + air intake horn: the snorkel above the driver's head
-function buildAirboxGeometry() {
-  // Trapezoidal extrusion
-  const shape = new THREE.Shape();
-  shape.moveTo(-0.3, 0.15);
-  shape.lineTo(0.3, 0.15);
-  shape.lineTo(0.2, 0.4);
-  shape.lineTo(0.18, 0.55);  // top horn
-  shape.lineTo(-0.18, 0.55);
-  shape.lineTo(-0.2, 0.4);
-  shape.closePath();
-  return new THREE.ExtrudeGeometry(shape, {
-    depth: 0.45, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
-  });
-}
-
-// 2026-mandated wheel cover: 5-spoke disc
-function buildWheelCoverGeometry() {
-  const shape = new THREE.Shape();
-  // Outer disc
-  shape.absarc(0, 0, 0.33, 0, Math.PI * 2, false);
-  // 5 spokes as cut-outs (we add a hole, then draw 5 spoke cut-outs)
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, 0.09, 0, Math.PI * 2, true);
-  shape.holes.push(hole);
-  // The "open" look — we don't cut spokes, we just leave a solid disc with center hole
-  // For 2026, the wheel covers are mostly solid to reduce turbulent wake
-  const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.04, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 2
-  });
-  return geo;
-}
-
-// Dispatch: which geometry to build for a given part
+/* GEOMETRY — v1 BoxGeometry primitives
+   Confirmed working on iOS Safari. v2 attempted "regulation-correct"
+   curves (TorusGeometry, ExtrudeGeometry, etc.) which broke iOS WebGL.
+   Reverted: each part is a BoxGeometry sized from PARTS[].size, and
+   the 12 tappable parts come from the PARTS array. Wheels are
+   4 simple cylinders, added in initThree(). */
 function buildPartGeometry(part) {
-  switch (part.id) {
-    case 'frontWing': return buildFrontWingGeometry();
-    case 'rearWing':  return buildRearWingGeometry();
-    case 'floor':     return buildFloorGeometry();
-    case 'sidepodL':  return buildSidepodGeometry('L');
-    case 'sidepodR':  return buildSidepodGeometry('R');
-    case 'halo':      return buildHaloGeometry();
-    case 'nose':      return buildNoseGeometry();
-    case 'suspF':
-    case 'suspR':     return buildSuspensionGeometry();
-    case 'powerUnit': return buildPowerUnitGeometry();
-    case 'battery':   return buildBatteryGeometry();
-    case 'brakeDuct': return buildBrakeDuctGeometry();
-    case 'diffuser':  return buildDiffuserGeometry();
-    default:          return new THREE.BoxGeometry(...part.size);
-  }
+  return new THREE.BoxGeometry(...part.size);
 }
 
 function onResize() {
@@ -2869,7 +2625,16 @@ document.addEventListener('click', (e) => {
   if (nav) {
     const dest = nav.getAttribute('data-go');
     if (dest === 'teams') go('teams');
-    if (dest === 'season') go('teams');
+    if (dest === 'season') {
+      // Season button: go to teams screen, then scroll the season strip
+      // into view. iOS needs a small delay so the screen transition
+      // (opacity 0 → 1) has time to commit before scrollIntoView runs.
+      go('teams');
+      setTimeout(() => {
+        const strip = $('#seasonStrip');
+        if (strip) strip.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 350);
+    }
   }
   if (e.target.closest('#sheetClose')) closePartSheet();
   if (e.target.closest('#sheet') && e.target.id === 'sheet') closePartSheet();
