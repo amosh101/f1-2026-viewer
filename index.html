@@ -786,6 +786,9 @@ a { color: inherit; text-decoration: none; }
 <script>
 (function(){
   function showFatal(msg){
+    // Dedupe at the source: once the fatal overlay is shown anywhere
+    // (pre-module, runtime, bottom-script), ignore all subsequent calls.
+    if (window.__f1FatalShown) return;
     var d = document.getElementById('diag');
     if (d) { d.style.display = 'block'; d.innerHTML = msg; }
     var fat = document.getElementById('fatal-overlay');
@@ -796,6 +799,7 @@ a { color: inherit; text-decoration: none; }
       document.body.appendChild(fat);
     }
     fat.innerHTML = msg;
+    window.__f1FatalShown = true;
   }
   window.__f1ShowFatal = showFatal;
   window.addEventListener('error', function(e){
@@ -813,24 +817,30 @@ a { color: inherit; text-decoration: none; }
     var reason = (e.reason && (e.reason.message || String(e.reason))) || 'unknown';
     showFatal('❌ Unhandled error<br>' + reason);
   });
-  // Network-failure timeout. If the module never loads at all (e.g. the
-  // importmap target is blocked, DNS fails, or the phone is offline), no
-  // error event fires — but THREE will still be undefined after a few
-  // seconds. This poll catches that case.
+  // Network-failure timeout. The module sets window.__threeImported = true
+  // on successful import. If after 5s that flag is missing AND the canvas
+  // exists (i.e. we're on the car page, not the home page), show the
+  // diagnostic. This avoids the home-page false positive where THREE is
+  // never imported but no failure has actually occurred.
   setTimeout(function(){
-    if (typeof window.THREE === 'undefined' && !document.getElementById('fatal-overlay')) {
-      showFatal('❌ Three.js failed to load<br>' +
-                'Network: ' + (navigator.onLine ? 'online (but importmap target unreachable?)' : 'offline') + '<br>' +
-                'User-Agent: ' + navigator.userAgent + '<br>' +
-                'Time waited: 5s<br>' +
-                '<br>This usually means the importmap target is blocked or unreachable.<br>' +
-                'Try: hard-refresh (pull down on iOS), check WiFi/cellular, or contact the network admin.');
-    }
+    if (window.__threeImported) return; // success path
+    if (!document.getElementById('carCanvas')) return; // not the car page
+    showFatal('❌ Three.js failed to load<br>' +
+              'Network: ' + (navigator.onLine ? 'online (but importmap target unreachable?)' : 'offline') + '<br>' +
+              'User-Agent: ' + navigator.userAgent + '<br>' +
+              'Time waited: 5s<br>' +
+              '<br>This usually means the importmap target is blocked or unreachable.<br>' +
+              'Try: hard-refresh (pull down on iOS), check WiFi/cellular, or contact the network admin.');
   }, 5000);
 })();
 </script>
 <script type="module">
 import * as THREE from 'three';
+// Expose THREE on window so the pre-module diagnostic can detect a successful
+// import. ES modules don't pollute window on their own, so the diagnostic
+// was always firing a false "Three.js failed to load" message.
+window.THREE = THREE;
+window.__threeImported = true;
 
 /* =========================================================
    F1 2026 Viewer — inline runtime.
@@ -2275,6 +2285,9 @@ function initThree() {
   // until the user dismisses it. The text is intentionally detailed —
   // a screenshot of this overlay is the source of truth for debugging.
   const showDiag = (lines) => {
+    // Honor the global fatal-shown flag so we don't double-display with
+    // the pre-module timeout / error listener.
+    if (window.__f1FatalShown) return;
     if (!diag) return;
     diag.style.display = 'block';
     diag.innerHTML = (Array.isArray(lines) ? lines : [lines]).join('<br>');
@@ -2300,13 +2313,16 @@ function initThree() {
     probeErr = e.message || String(e);
   }
   // Three.js presence check (it was imported at module top — if the
-  // import itself failed, this would be undefined).
-  const threeOK = (typeof THREE !== 'undefined');
+  // import itself failed, the module wouldn't have run at all, so we
+  // can trust that THREE is bound. Use window.__threeImported as the
+  // canonical success flag set at module top.)
+  const threeOK = (typeof THREE !== 'undefined') && window.__threeImported === true;
   const threeVer = threeOK ? THREE.REVISION : 'NOT LOADED';
   // If anything in the pre-flight looks wrong, show the diagnostic
   // immediately and bail. Don't try to make a renderer if we know
   // it's going to fail.
   if (!threeOK) {
+    // The showDiag helper honors the global dedupe flag — no call-site check needed.
     showDiag([
       '❌ Three.js failed to import',
       `Network: ${navigator.onLine ? 'online' : 'offline'}`,
@@ -2812,6 +2828,7 @@ document.addEventListener('click', (e) => {
 // the developer) can see what went wrong instead of staring at a
 // black canvas.
 function showFatal(msg) {
+  if (window.__f1FatalShown) return;
   const d = document.getElementById('diag');
   if (d) {
     d.style.display = 'block';
@@ -2827,10 +2844,16 @@ function showFatal(msg) {
     document.body.appendChild(fat);
   }
   fat.innerHTML = msg;
+  window.__f1FatalShown = true;
   console.error('[F1 viewer] Fatal:', msg);
 }
 window.addEventListener('error', (e) => {
   if (e.filename && /three|three\.module|esm\.sh|vendor/i.test(e.filename)) {
+    // If the module already imported successfully, any error here is downstream
+    // (e.g. a render loop bug), not an import failure. Don't show the
+    // importmap-targeted diagnostic.
+    if (window.__threeImported) return;
+    // showFatal itself honors the global dedupe flag.
     showFatal('❌ Three.js failed to load<br>' +
               'File: ' + e.filename + '<br>' +
               'Error: ' + (e.message || '(unknown)') + '<br>' +
