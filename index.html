@@ -801,8 +801,21 @@ a { color: inherit; text-decoration: none; }
     fat.innerHTML = msg;
     window.__f1FatalShown = true;
   }
+  function onCarPage() {
+    // The page is an SPA: all sections live in the DOM at all times,
+    // toggled via the .active class on <section class="screen" data-screen="...">.
+    // The car canvas (#carCanvas) exists in the DOM even on the home page
+    // (just hidden), so we have to check whether the car screen is
+    // actually active.
+    const carScreen = document.getElementById('screen-car');
+    return !!(carScreen && carScreen.classList.contains('active'));
+  }
   window.__f1ShowFatal = showFatal;
   window.addEventListener('error', function(e){
+    // Diagnostic is scoped to the car page only. On the home / teams
+    // list / season pages, the canvas doesn't exist, THREE isn't
+    // imported, and any error here is unrelated to the 3D viewer.
+    if (!onCarPage()) return;
     var src = e.filename || '';
     if (/three/i.test(src) || /import|module|three/i.test(e.message || '')) {
       showFatal('❌ Three.js failed to load<br>' +
@@ -814,6 +827,7 @@ a { color: inherit; text-decoration: none; }
     }
   });
   window.addEventListener('unhandledrejection', function(e){
+    if (!onCarPage()) return;
     var reason = (e.reason && (e.reason.message || String(e.reason))) || 'unknown';
     showFatal('❌ Unhandled error<br>' + reason);
   });
@@ -824,7 +838,7 @@ a { color: inherit; text-decoration: none; }
   // never imported but no failure has actually occurred.
   setTimeout(function(){
     if (window.__threeImported) return; // success path
-    if (!document.getElementById('carCanvas')) return; // not the car page
+    if (!onCarPage()) return; // not the car page
     showFatal('❌ Three.js failed to load<br>' +
               'Network: ' + (navigator.onLine ? 'online (but importmap target unreachable?)' : 'offline') + '<br>' +
               'User-Agent: ' + navigator.userAgent + '<br>' +
@@ -2847,7 +2861,21 @@ function showFatal(msg) {
   window.__f1FatalShown = true;
   console.error('[F1 viewer] Fatal:', msg);
 }
+// Error listeners are SCOPED TO THE CAR PAGE. We only want to show
+// import / render diagnostics when the user is actually on the
+// car explorer — never on the home page, the teams list, or the
+// season page, where THREE isn't loaded and any error is unrelated.
+// The page is an SPA: all sections live in the DOM, toggled via
+// the .active class on each <section class="screen">. So we have
+// to check that #screen-car has the .active class, not just that
+// the canvas element exists.
+function onCarPage() {
+  const carScreen = document.getElementById('screen-car');
+  return !!(carScreen && carScreen.classList.contains('active'));
+}
+
 window.addEventListener('error', (e) => {
+  if (!onCarPage()) return;
   if (e.filename && /three|three\.module|esm\.sh|vendor/i.test(e.filename)) {
     // If the module already imported successfully, any error here is downstream
     // (e.g. a render loop bug), not an import failure. Don't show the
@@ -2862,6 +2890,7 @@ window.addEventListener('error', (e) => {
   }
 });
 window.addEventListener('unhandledrejection', (e) => {
+  if (!onCarPage()) return;
   const reason = e.reason && (e.reason.message || String(e.reason)) || 'unknown';
   showFatal('❌ Unhandled error<br>' + reason);
 });
