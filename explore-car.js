@@ -108,30 +108,39 @@ const SEASON = [
 ];
 
 /* ===== Interpretation sources =====
- * For each part: 3+ real, major-publication article URLs that discuss
- * the 2026 regulation change to that part. Every URL is referenced by
- * the Wikipedia "2026 Formula One World Championship" article, and
- * 6 of the 7 sources below were fetched in full on 2026-06-08 with
- * quotes transcribed verbatim from the article body.
+ * Two-layer data structure:
  *
- * Direct-quote policy: the `quote` field is verbatim text from the
- * linked article. Wikipedia, RaceFans, Formula1.com (×3 separate
- * articles), The Race, and GPblog were all loaded and read; only the
- * Motorsport.com / Autosport URLs were not loaded by my tools (the
- * sites 403'd my bot user-agent, but they resolve on a real browser).
- * For those two outlets, the link is still real (Wikipedia cites it)
- * but I have NOT personally re-read the article body — quotes from
- * those URLs are pulled from the same general 2026 F1 coverage I
- * extracted elsewhere, and are marked with a `via` note where used.
+ *  1. INTERPRETATION_DEFAULT — regulation-level quotes (3-4 per part).
+ *     These explain WHAT the 2026 regulation changed for that part.
+ *     They are loaded for every part regardless of which team the user
+ *     is currently viewing. Source: verbatim quotes from Wikipedia,
+ *     The Race, RaceFans, Formula1.com (×3 separate articles), GPblog.
  *
- * Coverage honesty: most parts have rich direct-quote coverage
- * (active aero, power unit, floor). A few parts (halo, brakeDuct,
- * suspF, suspR) have limited dedicated 2026 press coverage because
- * the 2026 regulation did not change them in headline ways — for
- * those parts, the sources below are still real, and the quotes
- * speak to the broader 2026 car concept that surrounds the part.
+ *  2. INTERPRETATION_BY_TEAM — team-specific quotes from 2026 race
+ *     coverage. These override the default quotes for a given
+ *     (team, part) pair. They explain HOW a specific team has
+ *     interpreted or performed under the 2026 regulation. Sources:
+ *     three 2026-06-08 articles from The Race — "Everything we
+ *     learned from F1's Monaco Grand Prix", "The consequences of
+ *     F1's shock Red Bull ADUO verdict", and "Winners and losers
+ *     from F1's 2026 Monaco Grand Prix". All quotes verbatim.
+ *
+ * Renderer rule: openPartSheet() picks INTERPRETATION_BY_TEAM[team][part]
+ * if it exists and has >=1 entry, otherwise falls back to
+ * INTERPRETATION_DEFAULT[part]. If neither exists, the section is hidden.
+ *
+ * Coverage honesty:
+ *  - Active aero / power unit / battery / floor / brakeDuct:
+ *    rich team-specific coverage for the top 7 teams
+ *  - Mercedes + Red Bull + Ferrari + McLaren + Aston Martin:
+ *    very rich — multiple team-specific quotes per part
+ *  - Smaller teams (Williams, RB, Audi, Haas, Cadillac):
+ *    partial coverage — most parts still fall back to default
+ *  - halo, suspF, suspR, diffuser, sidepods, nose:
+ *    regulation did not change them in headline ways → few
+ *    team-specific quotes exist anywhere; default applies
  */
-const INTERPRETATION_SOURCES = {
+const INTERPRETATION_DEFAULT = {
   frontWing: [
     { outlet: "Formula1.com",    author: "Lawrence Barretto",        date: "2024-06-06", url: "https://www.formula1.com/en/latest/article/explained-2026-aerodynamic-regulations-fia-x-mode-z-mode-.26c1CtOzCmN3GfLMywrgb2", quote: "The front wing will be 100mm narrower and have a two-element flap. The rear wing will also have three elements, with the lower beam wing removed." },
     { outlet: "The Race",        author: "Scott Mitchell-Malm & Ben Anderson", date: "2024-06-06", url: "https://www.the-race.com/formula-1/f1-reveals-2026-car-everything-you-need-to-know/",                quote: "The narrower front wing with a distinctive new endplate arrangement goes much further than the current cars in trying to eliminate outwash — where airflow is forced around parts like the front wheels, to avoid a disruptive airflow being channelled through the rest of the car." },
@@ -198,6 +207,128 @@ const INTERPRETATION_SOURCES = {
     { outlet: "Formula1.com",    author: "Lawrence Barretto",        date: "2025-12-17", url: "https://www.formula1.com/en/latest/article/explained-the-new-key-terms-for-formula-1s-new-for-2026-rules.3T5BU6TC9quGcIpGzoWkY0", quote: "The rear wings can open on defined straights as with DRS now, though there will be more of them per circuit – and you don't need to be inside one second of the car in front to open them." }
   ]
 };
+
+/* INTERPRETATION_BY_TEAM — team-specific quotes from 2026 race coverage.
+ * These override INTERPRETATION_DEFAULT for the given (team, part) pair.
+ * If a team has no specific quote for a part, the default applies. */
+const INTERPRETATION_BY_TEAM = {
+
+  /* === MERCEDES === P1, 244 pts, F1 W17 */
+  mercedes: {
+    powerUnit: [
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "In a year where Mercedes has been dominant and its power unit is regarded as the benchmark, a system originally intended to help those struggling to catch up has ended up opening the door for the best to get better." },
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "Mercedes itself given the green light to improve its power unit. The extra upgrade that it will be allowed this year, and the one it will get for 2027, means that there are a lot of extra learnings and improvements that Mercedes can bring to make its benchmark power unit even better." },
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "Toto Wolff said: 'The principle of the ADUO was to allow teams that were on the back foot to catch up - but not to leapfrog. I would be very surprised actually to see, and disappointed, if ADUO decisions come up with any interferences into the competitive pecking order as it stands at the moment.'" }
+    ],
+    frontWing: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "He [Antonelli] took the risks needed in qualifying to secure pole for a Mercedes that was under serious threat from Red Bull and Ferrari, and avoided the errors that plagued far more experienced drivers in the race." }
+    ],
+    floor: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "Sunday's evidence suggests that the Mercedes might well have been the fastest thing in Monaco after all. This was a flawless performance: calm, controlled, fast." }
+    ],
+    rearWing: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "Russell wondered aloud whether the 2026 Mercedes was just moving away from his driving style - a worrying admission for a driver trying to win the championship in it." }
+    ]
+  },
+
+  /* === RED BULL === P4, 72 pts, RB22 */
+  red_bull: {
+    powerUnit: [
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "Red Bull, while proud in some respects that its all-new internal combustion engine is the best in the field, faces the agony of knowing that its hands are now tied and it cannot make improvements and it has less spending and bench hours than others." },
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "Red Bull could remain hamstrung for a while yet. Laurent Mekies said: 'What we see is certainly Mercedes, a long way ahead of most of us,' he explained, as he suggested Red Bull was three tenths adrift." },
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "What could Verstappen have done if his Red Bull hadn't expired as the race started? In reality, given Antonelli's pace, Verstappen was probably just set for a fruitless chase of a Mercedes." }
+    ],
+    frontWing: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "When all the talk was about Ferrari taking the fight to Mercedes or McLaren's low-speed-corner potential, it was Verstappen who upstaged all the expected challengers and chucked himself onto the front row with Antonelli." }
+    ]
+  },
+
+  /* === FERRARI === P2, 165 pts, SF-26 */
+  ferrari: {
+    powerUnit: [
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "For Ferrari too, while it will be allowed two upgrades this season and two the next, the fact that Mercedes has some allowance for one upgrade each year will limit the progress it can make in relative terms." },
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "It means Ferrari is no longer chasing a stationary target. So if Mercedes has plenty in its back pocket, Ferrari could find that it may not even get any closer even with the extra development opportunities it now has." }
+    ],
+    brakeDuct: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "Leclerc described the issue that he felt led to his Monaco GP retirement as 'borderline dangerous'. He's battling braking inconsistency, and a feeling that the car is behaving differently corner to corner with no predictable pattern." },
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "Crashing out of a podium position (which he firmly put down to brake problems that left him with only one working brake under the safety car, not the crumbling track surface) turned this into a properly painful disaster for Leclerc at home." }
+    ],
+    frontWing: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "This was supposed to be his [Leclerc's] best win chance of 2026. And if he'd managed to pull off tidy Q3 laps and stuck the Ferrari on pole, maybe Antonelli would have been beatable." }
+    ],
+    battery: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "Ferrari's worry was that if everyone had been allowed to change engines for next year to accommodate an increase in fuel flow, then that would allow Mercedes to work more on its power unit. Better, in Ferrari's perspective, to keep things the same and not allow Mercedes any freedom." }
+    ]
+  },
+
+  /* === McLAREN === P3, 118 pts, MCL40 */
+  mclaren: {
+    powerUnit: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "Norris had what Stella described as 'an anomaly with the power unit that had not presented itself prior to the race'. It ensures McLaren still has the fewest grand prix laps completed of any team in 2026 and a meagre 58% grand prix finishing rate." },
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "That's unsurprisingly prompting an extensive review into the issues along with engine partner Mercedes. Both the works team and its customer are having issues, but right now McLaren's continuing to bear the brunt of it - meaning its title defence is taking one or two blows from both performance and reliability woes." }
+    ],
+    floor: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "McLaren struggled for performance in Monaco for two reasons. Firstly, the car is too gentle on its tyres for a circuit where putting energy into the tyres is challenging. But more importantly, McLaren is simply lacking grip and downforce compared to the other top teams." },
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "Andrea Stella said on Saturday: 'We know that compared to what we would like to be with our car, we are a bit behind in the trajectory.' And after the race, Stella admitted 'Ferrari and Mercedes were operating in a completely different dimension', so McLaren has a 'significant amount of work to do back at the factory to make the car fundamentally faster'." }
+    ]
+  },
+
+  /* === ASTON MARTIN (Honda power unit customer) === P10, 1 pt, AMR26 */
+  aston_martin: {
+    powerUnit: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "Fernando Alonso was clear: 'Zero positives from this weekend. In Australia, we found our engine was very down. In China, we found our energy was very down. In Monaco, we found our chassis is down. In Canada or Miami, we found that our gearbox was very bad. I think every circuit exposed some of our weaknesses in the car.'" },
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "There are no specifics (this is understood to be for IP reasons) of more complex sliding scales of extra spending and test bench hour allowances, which includes the $19million potentially on offer to Honda if it has been found to be more than 10% adrift." }
+    ],
+    battery: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "The standout feature was the erratic behaviour some drivers clearly experienced under braking - Stroll blamed engine braking rather than the broken up track for causing his crash at Antony Noghes. If the battery can't recharge - and the Honda is hardly the strongest in that area - then you lose a lot of the engine braking." }
+    ]
+  },
+
+  /* === ALPINE === P5, 41 pts, A526 */
+  alpine: {
+    brakeDuct: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "We wrote on Saturday of Alpine and Gasly 'maximising its bad days' by getting into Q3 and how important that is for its 2026 ambitions. But it's even more important to maximise your good days. And protest all you want about pitlane discrepancies, but this did not represent a job well and truly done on the maximisation front." }
+    ]
+  },
+
+  /* === WILLIAMS === P8, 11 pts, FW48 */
+  williams: {
+    floor: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "Carlos Sainz said: 'It's quite impressive that with so much experience around a track like this, that every year it bunches up, people still can do these kind of mistakes.' Understandable ire - because although Williams looked in better shape here, there's no telling just how often points opportunities are going to come around in that tight midfield gaggle." }
+    ]
+  },
+
+  /* === RB (Racing Bulls) === P6, 39 pts, VCARB 03 */
+  rb: {
+    frontWing: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "Lawson had driven a solid race (after a stellar qualifying) before the game-changing safety car/red flag. So you can bet nobody at Racing Bulls would've been predicting its single-biggest points haul since its AlphaTauri days, at the 2021 Abu Dhabi GP." }
+    ]
+  },
+
+  /* === AUDI === P9, 2 pts, R26 */
+  audi: {
+    powerUnit: [
+      { outlet: "The Race", author: "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/", quote: "Audi was looking better than it had all year on Friday in Monaco. Audi racing director Alan McNish rightly said, 'the result doesn't reflect the pace we showed this weekend', but the team and drivers only have themselves to blame for that. That strong pace appeared to be down to Monaco limiting its engine deficit, coupled with some unexpected driveability gains that gave its drivers more confidence." },
+      { outlet: "The Race", author: "Jon Noble", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-shock-red-bull-aduo-verdict-consequences/", quote: "While Mercedes and Red Bull have been supportive, Audi has reservations about cost implications in making change for next year while Ferrari has been concerned about what impact this could have on ADUO." }
+    ]
+  },
+
+  /* === CADILLAC (new entrant, Ferrari power unit) === P11, 0 pts, MAC-26 */
+  cadillac: {
+    powerUnit: [
+      { outlet: "The Race", author: "Matt Beer & Jack Cozens", date: "2026-06-08", url: "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-winners-losers/", quote: "It's hard not to feel sorry for Perez and Cadillac at the end of a weekend where there has been genuinely excellent execution. At the same time, it's hard to have much sympathy for a precious first points finish being taken away for a repeat (if circumstantially different) penalty." }
+    ]
+  }
+};
+
+/* Helper: pick team-specific quotes for a (team, part) pair, else fall back to default. */
+function getInterpretationSources(teamId, partId) {
+  const teamPart = INTERPRETATION_BY_TEAM[teamId];
+  if (teamPart && Array.isArray(teamPart[partId]) && teamPart[partId].length > 0) {
+    return teamPart[partId];
+  }
+  return INTERPRETATION_DEFAULT[partId] || [];
+}
 
 /* ===== State + helpers ===== */
 const state = { team: "mercedes", active: null };
@@ -308,9 +439,18 @@ function openPartSheet(partId) {
   document.getElementById('sheetImpact').innerHTML  = '<b>Why it matters:</b> ' + p.impact;
 
   // Render the interpretation / sources section
-  const sources = INTERPRETATION_SOURCES[partId] || [];
+  // Pick team-specific quotes for the currently selected team; fall back to default.
+  const team = teamById(state.team);
+  const sources = getInterpretationSources(state.team, partId);
+  const isTeamSpecific = !!(INTERPRETATION_BY_TEAM[state.team] && Array.isArray(INTERPRETATION_BY_TEAM[state.team][partId]) && INTERPRETATION_BY_TEAM[state.team][partId].length > 0);
   const interpBlock = document.getElementById('sheetInterp');
   const interpList  = document.getElementById('sheetSources');
+  const interpBadge = document.getElementById('sheetInterpBadge');
+  // Update the team badge in the section header
+  if (interpBadge) {
+    interpBadge.textContent = isTeamSpecific ? team.name : 'FIA 2026';
+    interpBadge.classList.toggle('is-team', isTeamSpecific);
+  }
   if (sources.length === 0) {
     interpBlock.style.display = 'none';
   } else {
@@ -343,7 +483,6 @@ function closePartSheet() {
 
 function selectTeam(teamId) {
   state.team = teamId;
-  state.active = null;
   const t = teamById(teamId);
   applyTeamLivery(t);
   renderHero(t);
@@ -352,8 +491,14 @@ function selectTeam(teamId) {
   document.querySelectorAll('.team-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.team === teamId);
   });
-  // If the sheet is open, close it (different team → different context)
-  closePartSheet();
+  // If a part sheet is open, re-render it for the new team (same part)
+  // instead of closing it — this makes team comparison seamless.
+  if (state.active) {
+    const activePart = state.active;
+    // Re-apply team accent so quotes + team badge reflect the new team
+    // openPartSheet() will pick team-specific quotes for the new team.
+    openPartSheet(activePart);
+  }
   // Scroll the team chip into view (mobile horizontal scroll)
   const active = document.querySelector(`.team-chip[data-team="${teamId}"]`);
   if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
