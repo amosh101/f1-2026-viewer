@@ -707,6 +707,13 @@ a { color: inherit; text-decoration: none; }
   <section class="screen" id="screen-car" data-screen="car">
     <div class="car-stage">
       <div class="car-canvas" id="carCanvas">
+        <!--
+          Diagnostic overlay. Stays display:none when everything works.
+          If Three.js or WebGL fails, initThree() flips it on with a
+          plain-English error message. Screenshot this on the phone if
+          the 3D model is broken — the text tells us exactly why.
+        -->
+        <div id="diag" style="display:none;position:absolute;top:60px;left:16px;right:16px;z-index:100;padding:14px 16px;border-radius:10px;background:rgba(255,77,77,0.12);border:1px solid rgba(255,77,77,0.45);color:#ffb4b4;font:12px/1.5 ui-monospace,Menlo,monospace;word-break:break-word;pointer-events:none;"></div>
         <div class="hud">
           <div class="ttl"><span class="acc" id="hudTeam">MERCEDES</span> · W17 BASELINE</div>
           <div class="sub">2026 TECHNICAL REGULATION REFERENCE</div>
@@ -768,6 +775,59 @@ a { color: inherit; text-decoration: none; }
     "three": "https://esm.sh/three@0.160.0"
   }
 }
+</script>
+<!--
+  Pre-module error trap. This is a regular (non-module) script so it
+  executes BEFORE the module below. If Three.js fails to load from
+  esm.sh, the module body never runs — without this trap, the user
+  would see an infinite splash with no clue what's wrong. With it,
+  we get a plain-English error message on screen.
+-->
+<script>
+(function(){
+  function showFatal(msg){
+    var d = document.getElementById('diag');
+    if (d) { d.style.display = 'block'; d.innerHTML = msg; }
+    var fat = document.getElementById('fatal-overlay');
+    if (!fat) {
+      fat = document.createElement('div');
+      fat.id = 'fatal-overlay';
+      fat.style.cssText = 'position:fixed;top:80px;left:16px;right:16px;z-index:9999;padding:14px 16px;border-radius:10px;background:rgba(255,77,77,0.15);border:1px solid rgba(255,77,77,0.6);color:#ffb4b4;font:12px/1.5 ui-monospace,Menlo,monospace;word-break:break-word;pointer-events:none;';
+      document.body.appendChild(fat);
+    }
+    fat.innerHTML = msg;
+  }
+  window.__f1ShowFatal = showFatal;
+  window.addEventListener('error', function(e){
+    var src = e.filename || '';
+    if (/esm\.sh|three/i.test(src) || /import|module|three/i.test(e.message || '')) {
+      showFatal('❌ Three.js failed to load from esm.sh<br>' +
+                'File: ' + src + '<br>' +
+                'Error: ' + (e.message || '(unknown)') + '<br>' +
+                'Network: ' + (navigator.onLine ? 'online' : 'offline') + '<br>' +
+                'User-Agent: ' + navigator.userAgent + '<br>' +
+                '<br>Try: hard-refresh (pull down on iOS), or check WiFi/cellular.');
+    }
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var reason = (e.reason && (e.reason.message || String(e.reason))) || 'unknown';
+    showFatal('❌ Unhandled error<br>' + reason);
+  });
+  // Network-failure timeout. If the module never loads at all (e.g. esm.sh
+  // is blocked, DNS fails, or the phone is offline), no error event
+  // fires — but THREE will still be undefined after a few seconds. This
+  // poll catches that case.
+  setTimeout(function(){
+    if (typeof window.THREE === 'undefined' && !document.getElementById('fatal-overlay')) {
+      showFatal('❌ Three.js failed to load<br>' +
+                'Network: ' + (navigator.onLine ? 'online (but CDN unreachable?)' : 'offline') + '<br>' +
+                'User-Agent: ' + navigator.userAgent + '<br>' +
+                'Time waited: 5s<br>' +
+                '<br>This usually means esm.sh is blocked or unreachable.<br>' +
+                'Try: hard-refresh (pull down on iOS), check WiFi/cellular, or contact the network admin.');
+    }
+  }, 5000);
+})();
 </script>
 <script type="module">
 import * as THREE from 'three';
@@ -2199,20 +2259,108 @@ let renderer, scene, camera, controls, car, partMeshes, hoveredPart;
 function initThree() {
   if (threeInited) return;
   const canvasWrap = $('#carCanvas');
+  const diag = $('#diag');
+  // Helper: show a diagnostic message in the car screen. Stays visible
+  // until the user dismisses it. The text is intentionally detailed —
+  // a screenshot of this overlay is the source of truth for debugging.
+  const showDiag = (lines) => {
+    if (!diag) return;
+    diag.style.display = 'block';
+    diag.innerHTML = (Array.isArray(lines) ? lines : [lines]).join('<br>');
+  };
+  // Pre-flight diagnostics — always run, so we know what the device is.
   const w = canvasWrap.clientWidth, h = canvasWrap.clientHeight;
+  const ua = navigator.userAgent;
+  const dpr = window.devicePixelRatio;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
+  // Probe for WebGL up front. iOS Safari sometimes has it disabled.
+  let probe = null, probeErr = null, glVersion = null, glRenderer = null;
+  try {
+    const pc = document.createElement('canvas');
+    const gl = pc.getContext('webgl2') || pc.getContext('webgl') || pc.getContext('experimental-webgl');
+    if (gl) {
+      probe = 'ok';
+      glVersion = gl.getParameter(gl.VERSION);
+      glRenderer = gl.getParameter(gl.RENDERER);
+    } else {
+      probe = 'null-context';
+    }
+  } catch (e) {
+    probeErr = e.message || String(e);
+  }
+  // Three.js presence check (it was imported at module top — if the
+  // import itself failed, this would be undefined).
+  const threeOK = (typeof THREE !== 'undefined');
+  const threeVer = threeOK ? THREE.REVISION : 'NOT LOADED';
+  // If anything in the pre-flight looks wrong, show the diagnostic
+  // immediately and bail. Don't try to make a renderer if we know
+  // it's going to fail.
+  if (!threeOK) {
+    showDiag([
+      '❌ Three.js failed to import',
+      `Network: ${navigator.onLine ? 'online' : 'offline'}`,
+      `User-Agent: ${ua}`,
+      '',
+      'This usually means the esm.sh request timed out or was blocked.',
+      'Try: hard-refresh (pull down), check WiFi/cellular, or open in desktop Chrome first.',
+    ]);
+    return;
+  }
+  if (probe === 'null-context' || probeErr) {
+    showDiag([
+      '❌ WebGL is not available',
+      `User-Agent: ${ua}`,
+      `iOS detected: ${isIOS}`,
+      `Probe result: ${probe}${probeErr ? ' (' + probeErr + ')' : ''}`,
+      '',
+      'Fixes to try:',
+      '• Settings → Safari → Advanced → WebGL (if present)',
+      '• Settings → Safari → Advanced → Experimental Features → WebGL 2.0',
+      '• Close all Safari tabs and reopen',
+    ]);
+    return;
+  }
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x000000, 8, 22);
   camera = new THREE.PerspectiveCamera(35, w/h, 0.1, 100);
   camera.position.set(5.5, 2.2, 6.5);
   camera.lookAt(0, 0, 0);
   // powerPreference: high-performance = ask the browser to use the discrete GPU if available
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
-    powerPreference: 'high-performance',
-    stencil: false,         // we don't need it, saves a renderbuffer
-    depth: true,
-  });
+  try {
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+      stencil: false,         // we don't need it, saves a renderbuffer
+      depth: true,
+    });
+  } catch (e) {
+    showDiag([
+      '❌ WebGLRenderer constructor threw',
+      `Three.js rev: ${threeVer}`,
+      `GL version: ${glVersion}`,
+      `GL renderer: ${glRenderer}`,
+      `User-Agent: ${ua}`,
+      `iOS: ${isIOS}`,
+      `Error: ${e.message || e}`,
+      '',
+      'The browser refused to create a WebGL renderer. This is a',
+      'device/browser policy issue, not a code issue.',
+    ]);
+    return;
+  }
+  if (!renderer || !renderer.getContext()) {
+    showDiag([
+      '❌ WebGLRenderer created but context is null',
+      `Three.js rev: ${threeVer}`,
+      `GL version: ${glVersion}`,
+      `GL renderer: ${glRenderer}`,
+      `User-Agent: ${ua}`,
+      `iOS: ${isIOS}`,
+      `Canvas: ${w}×${h} (CSS), dpr=${dpr}`,
+    ]);
+    return;
+  }
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -2224,6 +2372,11 @@ function initThree() {
   renderer.domElement.style.willChange = 'transform';
   renderer.domElement.style.touchAction = 'none'; // we handle gestures
   canvasWrap.appendChild(renderer.domElement);
+  // Optional: log the device info to console so we can see it in
+  // Safari's Web Inspector (Settings → Safari → Advanced → Web Inspector).
+  console.info('[F1 viewer] init OK', {
+    ua, isIOS, dpr, w, h, glVersion, glRenderer, threeRev: threeVer,
+  });
   // Lights — cinematic 3-point
   const ambient = new THREE.AmbientLight(0xffffff, 0.35);
   scene.add(ambient);
@@ -2641,6 +2794,42 @@ document.addEventListener('click', (e) => {
 });
 
 /* ---------- KICKOFF ---------- */
+// Top-level error trap. If anything in this module throws — including
+// the esm.sh import itself failing, or any uncaught error later — we
+// surface it on the car screen's diagnostic overlay so the user (and
+// the developer) can see what went wrong instead of staring at a
+// black canvas.
+function showFatal(msg) {
+  const d = document.getElementById('diag');
+  if (d) {
+    d.style.display = 'block';
+    d.innerHTML = msg;
+  }
+  // Also try to surface on every screen via a fixed-position div, in
+  // case the user never reached the car screen.
+  let fat = document.getElementById('fatal-overlay');
+  if (!fat) {
+    fat = document.createElement('div');
+    fat.id = 'fatal-overlay';
+    fat.style.cssText = 'position:fixed;top:80px;left:16px;right:16px;z-index:9999;padding:14px 16px;border-radius:10px;background:rgba(255,77,77,0.15);border:1px solid rgba(255,77,77,0.6);color:#ffb4b4;font:12px/1.5 ui-monospace,Menlo,monospace;word-break:break-word;pointer-events:none;';
+    document.body.appendChild(fat);
+  }
+  fat.innerHTML = msg;
+  console.error('[F1 viewer] Fatal:', msg);
+}
+window.addEventListener('error', (e) => {
+  if (e.filename && /esm\.sh/.test(e.filename)) {
+    showFatal('❌ Three.js failed to load from esm.sh<br>' +
+              'File: ' + e.filename + '<br>' +
+              'Error: ' + (e.message || '(unknown)') + '<br>' +
+              'Network: ' + (navigator.onLine ? 'online' : 'offline') + '<br>' +
+              '<br>Try: hard-refresh (pull down on iOS), or check WiFi/cellular.');
+  }
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const reason = e.reason && (e.reason.message || String(e.reason)) || 'unknown';
+  showFatal('❌ Unhandled error<br>' + reason);
+});
 startSplash();
 </script>
 </body>
