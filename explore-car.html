@@ -182,6 +182,58 @@
   }
   .sheet .impact b { color: var(--ink); }
 
+  /* ---- Interpretation / sources ---- */
+  .interp {
+    border-top: 1px solid var(--line);
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+  .interp-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .interp-title {
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink); font-weight: 600;
+  }
+  .interp-sub {
+    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .sources {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .src-row { display: block; }
+  .src-link {
+    display: block; text-decoration: none; color: var(--ink);
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 11px;
+    transition: border-color .12s, background .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .src-link:hover, .src-link:focus {
+    border-color: var(--accent); background: rgba(255,255,255,0.02);
+    outline: none;
+  }
+  .src-outlet {
+    display: inline-block;
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .src-quote {
+    display: block; font-size: 12px; line-height: 1.4;
+    color: var(--ink); margin: 2px 0 4px;
+    font-style: italic;
+    /* Keep long quotes readable on narrow phones */
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  .src-meta {
+    display: block; font-size: 10px; color: var(--ink-dim);
+    letter-spacing: 0.04em;
+  }
+
   /* ---- Tiny logo ---- */
   .footer {
     text-align: center; padding: 20px 0 30px; font-size: 10px;
@@ -384,6 +436,15 @@
     <div class="reg-tag" id="sheetReg">FIA Tech Regs</div>
     <p class="spec" id="sheetSpec">—</p>
     <p class="impact" id="sheetImpact">—</p>
+
+    <!-- Interpretation / sources from major F1 publications -->
+    <div class="interp" id="sheetInterp">
+      <div class="interp-head">
+        <span class="interp-title">Interpretation</span>
+        <span class="interp-sub">Major publications</span>
+      </div>
+      <ul class="sources" id="sheetSources"></ul>
+    </div>
   </div>
 
 <script src="explore-car.js"></script>
