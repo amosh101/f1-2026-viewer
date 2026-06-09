@@ -7,6 +7,8 @@ __pycache__/
 # Test/dev scripts (kept locally only)
 scripts/test-*.js
 scripts/screenshot-*.js
+scripts/shot-*.js
+scripts/shot-*.png
 scripts/*.log
 
 # Editor

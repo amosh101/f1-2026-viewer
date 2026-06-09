@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "era_start": 2026,
+  "headline": {
+    "label": "BIGGEST RULES REWRITE",
+    "value_pct": 70,
+    "subtitle": "of the technical regulations changed vs 2022-2025",
+    "source": "FIA / Formula 1 — 'the most comprehensive rules overhaul in four decades'",
+    "source_url": "https://www.fia.com/news/fia-and-formula-1-confirm-2026-power-unit-regulations"
+  },
+  "years": {
+    "2026": {
+      "active": true,
+      "regulation_pct": 70,
+      "summary": "2026 is the first full regulation reset since 2022. The FIA has rewritten the technical regulations around active aerodynamics, a 50/50 hybridised power unit, sustainable fuels, and ground-effect floors. Roughly 70% of the technical regulations are new or substantively revised.",
+      "source_label": "FIA — 2026 Technical Regulations",
+      "source_url": "https://www.fia.com/regulation/category/110",
+      "categories": {
+        "aero": {
+          "label": "AERODYNAMICS",
+          "changes": [
+            {
+              "id": "aero-active-x-z",
+              "title": "Active aerodynamics: X-Mode and Z-Mode",
+              "summary": "DRS is replaced by two driver-selectable aero modes. X-Mode = high downforce (corners). Z-Mode = low drag (straights, ~+15-20 km/h).",
+              "change_pct": null,
+              "change_pct_label": "REPLACES DRS",
+              "source_label": "FIA Tech Regs Art. 3.10",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Removes the 'follow-the-leader' DRS problem",
+                "Straight-line speed gains come from low-drag configuration, not wing opening",
+                "Drivers manage mode selection on a corner-by-corner basis"
+              ]
+            },
+            {
+              "id": "aero-narrower-front-wing",
+              "title": "Front wing: narrower, simpler cascade",
+              "summary": "Front wing chord reduced from 2000mm (2022) to 1900mm. Cascade elements simplified. Outwash replaced by inwash to feed the underbody.",
+              "change_pct": 25,
+              "change_pct_label": "front wing chord -5%",
+              "source_label": "FIA Tech Regs Art. 3.9",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Reduces outwash-induced wake that hurt following cars",
+                "Front-end aero balance shifts toward the floor",
+                "Cleaner airflow to the floor edge wing"
+              ]
+            },
+            {
+              "id": "aero-floor-edge-wing",
+              "title": "Floor edge wing + ground effect stronger",
+              "summary": "Floor edges now feature explicit edge wings. Venturi tunnels are deeper. The car is fully ground-effect-dependent.",
+              "change_pct": 30,
+              "change_pct_label": "downforce share moved to floor",
+              "source_label": "FIA Tech Regs Art. 3.13",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Floor is the primary downforce source",
+                "Ride height tolerance reduced (porpoising mitigation)",
+                "Cars run lower and stiffer than 2022-2025"
+              ]
+            },
+            {
+              "id": "aero-sidepods-tapered-banned",
+              "title": "Sidepods: tapered look banned",
+              "summary": "The 2022-2025 'tapered' or 'coke-bottle' sidepod shape is no longer legal. Sidepod cross-section is now more strictly defined, with mandated cooling apertures.",
+              "change_pct": null,
+              "change_pct_label": "rule enforced",
+              "source_label": "FIA Tech Regs Art. 3.15",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Reduces aerodynamic cleverness; pushes design to the floor and suspension",
+                "Cooling is now regulated by FIA-defined apertures, not free design",
+                "McLaren's 2024 advantage from sidepod design is wiped out"
+              ]
+            },
+            {
+              "id": "aero-rear-wing-zmode",
+              "title": "Rear wing: lower-drag Z-Mode profile",
+              "summary": "Rear wing is significantly lower aspect in Z-Mode (straight-line config) than 2022-2025 DRS-open position. X-Mode (downforce) is the higher-drag cornering config.",
+              "change_pct": null,
+              "change_pct_label": "new concept",
+              "source_label": "FIA Tech Regs Art. 3.10",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Top speed gains of ~15-20 km/h from Z-Mode",
+                "Trade-off: cornering downforce in Z-Mode is much lower than 2024 DRS-closed"
+              ]
+            }
+          ]
+        },
+        "power_unit": {
+          "label": "POWER UNIT",
+          "changes": [
+            {
+              "id": "pu-50-50-split",
+              "title": "50/50 ICE-electric split",
+              "summary": "MGU-K output tripled (120 kW → 350 kW cap, ~470 HP). ICE output capped at ~550 HP. Total system power ~1000 HP equivalent, with electric now nearly matching ICE.",
+              "change_pct": 300,
+              "change_pct_label": "MGU-K power +300%",
+              "source_label": "FIA Tech Regs Art. 5.4",
+              "source_url": "https://www.fia.com/news/fia-and-formula-1-confirm-2026-power-unit-regulations",
+              "impact": [
+                "Lap-time delta: -3 to -4 seconds vs 2024",
+                "Energy deployment strategy becomes a real race factor",
+                "Manufacturers: Audi, Cadillac (GM), Red Bull-Ford Powertrains join; Honda stays; Renault/Alpine rebrand"
+              ]
+            },
+            {
+              "id": "pu-100-pct-sustainable-fuel",
+              "title": "100% sustainable fuel mandatory",
+              "summary": "All cars run on advanced sustainable fuel — drop-in fuel made from non-food bio feedstock, municipal waste, or captured CO2. The fuel must deliver equivalent performance to fossil gasoline.",
+              "change_pct": 100,
+              "change_pct_label": "fuel switch to 100% sustainable",
+              "source_label": "FIA Tech Regs Art. 5.5",
+              "source_url": "https://www.fia.com/news/f1-2026-fuel-regulations",
+              "impact": [
+                "Net-zero carbon target in scope",
+                "Fuel development now a key manufacturer battleground",
+                "Aramco (Saudi), Shell, TotalEnergies, Mobil 1 supplying bespoke blends"
+              ]
+            },
+            {
+              "id": "pu-mgu-h-removed",
+              "title": "MGU-H removed",
+              "summary": "The heat-energy-recovery MGU-H (turbocharger-integrated) is deleted. MGU-K (kinetic recovery) is the only electric element. This removes the turbo-electrical complexity that defined 2014-2025 hybrid PUs.",
+              "change_pct": -100,
+              "change_pct_label": "MGU-H -100% (removed)",
+              "source_label": "FIA Tech Regs Art. 5.2",
+              "source_url": "https://www.fia.com/news/fia-and-formula-1-confirm-2026-power-unit-regulations",
+              "impact": [
+                "Simpler PU architecture — easier for new manufacturers to enter",
+                "Turbo lag returns as a design challenge",
+                "Lower cost of entry for Audi, Cadillac, Red Bull-Ford"
+              ]
+            },
+            {
+              "id": "pu-cost-cap",
+              "title": "Power unit cost cap reduced",
+              "summary": "PU cost cap lowered to $95M/year (was $130M in 2022-2025). Includes spec parts (ECU, MGU-K, battery, control electronics) plus the manufacturer's ICE and turbo.",
+              "change_pct": -27,
+              "change_pct_label": "PU cost cap -27%",
+              "source_label": "FIA Financial Regulations Art. 5",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Encourages new entrants by reducing spend",
+                "Forces manufacturer efficiency in design and supply chain",
+                "Customer engine deals (e.g. Red Bull-Ford) become attractive"
+              ]
+            }
+          ]
+        },
+        "chassis": {
+          "label": "CHASSIS & SAFETY",
+          "changes": [
+            {
+              "id": "chassis-30-kg-lighter",
+              "title": "30 kg lighter minimum weight",
+              "summary": "Minimum car weight drops from 798 kg (2024) to 768 kg. Drivers still weighed separately. Car is meaningfully lighter despite the larger battery and electric systems.",
+              "change_pct": -4,
+              "change_pct_label": "min weight -30kg (-4%)",
+              "source_label": "FIA Tech Regs Art. 4.1",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Improved power-to-weight ratio (with PU bump)",
+                "Lower fuel-burn pace is now feasible",
+                "Drivers more sensitive to ballast placement for balance"
+              ]
+            },
+            {
+              "id": "chassis-anti-porpoise",
+              "title": "Stricter anti-porpoise measures",
+              "summary": "Vertical oscillation sensors mandated, AOM (Aero Oscillation Metric) limit enforced. Floor edge height min/max controlled more strictly than 2022-2023.",
+              "change_pct": null,
+              "change_pct_label": "rule enforced",
+              "source_label": "FIA Tech Regs Art. 3.13.4",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Eliminates the 2022 porpoising drama",
+                "Forces teams to commit to a ride-height window",
+                "Floor flex tolerance reduced"
+              ]
+            },
+            {
+              "id": "chassis-halo-headrest",
+              "title": "Halo + integrated headrest fairing",
+              "summary": "Halo structure unchanged at 9.5 kg titanium minimum. New for 2026: an integrated headrest fairing that's part of the survival cell.",
+              "change_pct": null,
+              "change_pct_label": "aero addition",
+              "source_label": "FIA Tech Regs Art. 12",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Aero: headrest fairing is part of the rear-wing airflow path",
+                "Safety: continues the post-2018 driver-protection standard"
+              ]
+            }
+          ]
+        },
+        "sporting": {
+          "label": "SPORTING & RACE FORMAT",
+          "changes": [
+            {
+              "id": "sporting-sprint-format",
+              "title": "Sprint weekend format revised",
+              "summary": "Sprint weekends now feature 1 sprint race (Saturday) + 1 feature race (Sunday). Practice and qualifying structure adapted. Sprint races do not award full championship points.",
+              "change_pct": null,
+              "change_pct_label": "format change",
+              "source_label": "FIA Sporting Regulations Art. 5",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Fewer sprint weekends overall (6 vs 2024's 8)",
+                "Sprint points reduced to 8-7-6-5-4-3-2-1 (top 8)",
+                "Sprint qualifying uses a separate session"
+              ]
+            },
+            {
+              "id": "sporting-allocation",
+              "title": "Engine allocation reduced",
+              "summary": "PU element allocations per season reduced (ICE: 4 → 3, MGU-K: 4 → 3, MGU-H removed). Exceeding allocation = grid penalties.",
+              "change_pct": -25,
+              "change_pct_label": "ICE allocation -25%",
+              "source_label": "FIA Tech Regs Art. 5.6",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Manufacturers must build durable PUs",
+                "Race-ending engine failures now heavily punished",
+                "Strategy: when to take a penalty becomes a key question"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "2025": {
+      "active": false,
+      "regulation_pct": 5,
+      "summary": "2025 was the final year of the 2022-2025 regulation set. Minor aero and safety updates, no major technical reset.",
+      "source_label": "FIA — 2025 Technical Regulations",
+      "source_url": "https://www.fia.com/regulation/category/110",
+      "categories": {
+        "aero": {
+          "label": "AERODYNAMICS",
+          "changes": [
+            {
+              "id": "aero-2025-floor-edge",
+              "title": "Floor edge height clarified",
+              "summary": "Floor edge height measurement clarified to close the 2024 flexi-floor loophole. Vertical flex tolerance reduced by 5%.",
+              "change_pct": 5,
+              "change_pct_label": "flex tolerance -5%",
+              "source_label": "FIA Tech Regs Art. 3.13",
+              "source_url": "https://www.fia.com/regulation/category/110",
+              "impact": [
+                "Targets the McLaren / Mercedes-style flexi-floors of 2024",
+                "Affect on relative pace: minor"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "future_years_note": "Add keys '2027', '2028' to the 'years' object as new regulations are published by the FIA. Schema is additive — existing years are never overwritten, only new keys added."
+}

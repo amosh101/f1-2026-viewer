@@ -206,6 +206,22 @@ a { color: inherit; text-decoration: none; }
 .hero .quick .stat .v { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .hero .quick .stat .sub-stat { font-size: 10px; letter-spacing: 0.18em; color: var(--ink-muted); text-transform: uppercase; margin-top: 2px; }
 .hero .quick .data-stamp { font-size: 9px; letter-spacing: 0.22em; color: var(--ink-faint); text-transform: uppercase; align-self: center; margin-left: 6px; padding: 4px 8px; border: 1px solid var(--ink-faint); border-radius: 99px; }
+.hero .quick .stat.stat-button {
+  position: relative;
+  cursor: pointer;
+  text-align: left;
+  font: inherit; color: inherit;
+  background: var(--ghost-bg);
+  border: 1px solid var(--ghost-bd);
+  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.hero .quick .stat.stat-button:hover { transform: translateY(-2px); border-color: rgba(0,215,182,0.5); background: rgba(0,215,182,0.06); }
+.hero .quick .stat.stat-button:active { transform: scale(0.98); }
+.hero .quick .stat.stat-button .v { color: var(--accent); }
+.hero .quick .stat.stat-button .arrow {
+  position: absolute; top: 14px; right: 14px;
+  font-size: 18px; color: var(--ink-muted); font-weight: 300;
+}
 
 /* ---------- SEASON ACTIONS (home screen secondary buttons) ---------- */
 .season-actions {
@@ -704,7 +720,12 @@ a { color: inherit; text-decoration: none; }
           <div class="sub-stat" id="statLeaderSub">Mercedes</div>
         </div>
         <div class="stat"><div class="k">POLE SITTER</div><div class="v" id="statPoles">—</div></div>
-        <div class="stat"><div class="k">REG REWRITE</div><div class="v">+ 70%</div></div>
+        <button class="stat stat-button" id="btnRegulations" data-go="regulations" type="button">
+          <div class="k">REG REWRITE</div>
+          <div class="v" id="statRegulations">+ 70%</div>
+          <div class="sub-stat">2026 — see all changes</div>
+          <span class="arrow">›</span>
+        </button>
         <div class="data-stamp" id="dataUpdated">DATA · STATIC</div>
       </div>
       <div class="season-actions">
@@ -943,6 +964,7 @@ let DRIVER_STANDINGS = [];       // [{position, points, wins, driver: {id, famil
 let PART_CHANGES = null;         // data/part-changes.json (hand-curated seed)
 let CAR_ISSUES = null;           // data/car-issues-dnf.json (auto-derived)
 let PACE_DASHBOARD = null;       // data/pace-dashboard.json (engineer view)
+let REGULATIONS = null;          // data/regulations.json (yearly, manually updated)
 
 async function fetchJSON(path) {
   const res = await fetch(path, { cache: 'no-cache' });
@@ -998,6 +1020,13 @@ async function refreshLiveData() {
     console.log(`[data] pace-dashboard.json: ${PACE_DASHBOARD.teams.length} teams, ${PACE_DASHBOARD.rounds_covered.length} rounds`);
   } catch (e) {
     console.warn('[data] pace-dashboard.json not available', e);
+  }
+  try {
+    REGULATIONS = await fetchJSON('./data/regulations.json');
+    const yrCount = Object.keys(REGULATIONS.years || {}).length;
+    console.log(`[data] regulations.json: schema v${REGULATIONS.schema_version}, ${yrCount} years, headline ${REGULATIONS.headline.value_pct}%`);
+  } catch (e) {
+    console.warn('[data] regulations.json not available', e);
   }
 }
 
@@ -2448,6 +2477,14 @@ function renderTeams() {
     $('#paceFastest').textContent = '—';
   }
 
+  // REG REWRITE stat: show the headline % from regulations.json (auto from
+  // the active year's regulation_pct, or headline.value_pct fallback)
+  if (REGULATIONS && REGULATIONS.headline) {
+    const pct = REGULATIONS.headline.value_pct;
+    const sign = pct >= 0 ? '+ ' : '';
+    $('#statRegulations').textContent = `${sign}${pct}%`;
+  }
+
   // Home-screen season-action buttons (bind on every renderTeams call so
   // the handlers exist the first time the user is on the home screen).
   const btnPC = $('#btnPartChanges');
@@ -2464,6 +2501,11 @@ function renderTeams() {
   if (btnPace && !btnPace.__bound) {
     btnPace.__bound = true;
     btnPace.onclick = () => { window.location.href = './pace.html'; };
+  }
+  const btnReg = $('#btnRegulations');
+  if (btnReg && !btnReg.__bound) {
+    btnReg.__bound = true;
+    btnReg.onclick = () => { window.location.href = './regulations.html'; };
   }
 }
 
