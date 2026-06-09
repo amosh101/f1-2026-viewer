@@ -58,6 +58,33 @@ in the same commit so the docs stay honest.
 - 14 cards across 4 categories (aero, power unit, chassis, sporting)
 - All 5 Playwright test steps pass
 
+### Sprint 7 — Driver detail page (2026-06-09) — *uncommitted at this report*
+- `driver.html` (19 KB) — bio + 3 season sections (2024, 2025, 2026)
+- `data/driver-history.json` (508 KB) — 22 drivers × 3 years from Jolpica
+- `scripts/build_driver_history.py` (12 KB) — backfill script
+- Driver cards on home (team detail) converted from `<div>` to clickable
+  `<button>` — hover lift, accent arrow, cursor pointer
+- Auto-generated story-style headlines per race ("recovering from P2 on
+  the grid", "first podium of the season", "DNFs after 23 laps")
+- 22 drivers, 18 with 2024 data, 19 with 2025, 22 with 2026 R1-R6
+- All 9 Playwright test steps pass (antonelli, hadjar, verstappen,
+  nonexistent driver, blank URL, back nav)
+
+### Sprint 7b — Driver page team-color theming + season reorder (2026-06-09)
+- `driver.html` updated: per-driver team-color theming via CSS variables
+  (`--team-color`, `--team-color-alpha`, `--accent`)
+- Resolves driver's 2026 team name → constructorId → 2026 livery color
+- Bio team row, 2026 season "CURRENT" tag, and 2026 points stat all
+  tinted with the team color (Mercedes teal, Ferrari red, Red Bull blue,
+  McLaren orange, Williams blue, Aston Martin green, etc.)
+- 2026 season section gets a `.current` class → 3px left border in
+  team color
+- Active tag now reads "CURRENT · IN PROGRESS"
+- **Season order reversed:** 2026 (current, in progress) → 2025 → 2024
+  (oldest), so the reader always sees what's happening now first
+- `scripts/test-driver-theme.js` — 6 cases × 7 assertions = 42/42 pass
+  (Antonelli/Hamilton/Verstappen/Piastri/Sainz/Alonso)
+
 ---
 
 ## Pages (verified working)
@@ -71,6 +98,7 @@ in the same commit so the docs stay honest.
 | Car issues | `car-issues.html?v=N` | ✓ 11 team cards sorted by DNF count → tap → DNF detail |
 | Pace dashboard | `pace.html?v=N` | ✓ SEASON view (132 rows) + RACE BY RACE sortable |
 | Regulations | `regulations.html?v=N` | ✓ Year tabs (2026, 2025), 14 cards, sourced |
+| Driver | `driver.html?id=<driverId>&v=N` | ✓ Bio, 3 season sections (newest first), team-color theming, race-by-race narrative |
 
 **CACHE WARNING:** iOS Safari aggressively caches. After deploy, hard-refresh
 or use `?v=N` query strings. Documented in `OPERATIONS.md`.
@@ -131,6 +159,21 @@ tap to read FIA article + impact. No 3D, no WebGL, works on every browser.
 Future work: per-team 3D geometry from launch imagery (Sprint 7+ in ROADMAP).
 
 ---
+
+**Driver page rendered with team-color theming (iPhone 13 WebKit):**
+
+| Driver | Team | Theme color | Test result |
+|---|---|---|---|
+| Antonelli | Mercedes | `#00D7B6` (teal) | ✓ all 7 assertions |
+| Hamilton | Ferrari | `#DC0000` (red) | ✓ all 7 assertions |
+| Verstappen | Red Bull | `#1E40AF` (blue) | ✓ all 7 assertions |
+| Piastri | McLaren | `#FF8000` (orange) | ✓ all 7 assertions |
+| Sainz | Williams | `#005AFF` (blue) | ✓ all 7 assertions |
+| Alonso | Aston Martin | `#006F62` (green) | ✓ all 7 assertions |
+
+**Season ordering verified:** 2026 (current, in progress, with team-color
+left border) → 2025 → 2024 (oldest). Reader always sees what's happening
+now first.
 
 ## Verified iPhone behaviour (Playwright iPhone 13 WebKit)
 

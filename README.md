@@ -12,12 +12,13 @@
 
 | Page | File | Size | Purpose |
 |---|---|---|---|
-| Home | `index.html` | 114 KB | Live season summary, team grid, season-action buttons |
+| Home | `index.html` | 115 KB | Live season summary, team grid, season-action buttons, clickable driver cards |
 | SVG car viewer | `explore-car.html` | 19 KB | Tap 12 parts, see FIA 2026 Tech Regs citation + impact |
 | Part changes | `part-changes.html` | 11 KB | Tracked team upgrades R1 → latest (3 hand-curated) |
 | Car issues | `car-issues.html` | 11 KB | Mechanical DNFs across 11 teams (24 documented) |
 | Pace dashboard | `pace.html` | 20 KB | Engineer view: race pace, teammate delta, qualifying gap |
 | Regulations | `regulations.html` | 15 KB | Year-on-year FIA regulation changes (2025, 2026) |
+| Driver | `driver.html` | 19 KB | Bio + race-by-race narrative for 2024, 2025, 2026 |
 
 ## What's real (no mocks)
 
@@ -32,6 +33,8 @@
   (aero, power unit, chassis, sporting)
 - **24 mechanical DNFs** across 11 teams, R1-R6
 - **Race pace + teammate deltas** computed from real race data, R1-R6
+- **Driver history** for all 22 drivers: 2024 + 2025 + 2026 R1-R6 race-by-race
+  results, sourced from Jolpica/Ergast
 - **Regulation rewrite headline**: +70% (FIA: "the most comprehensive rules
   overhaul in four decades")
 
@@ -81,11 +84,13 @@ f1-2026-viewer/
 │   ├── constructor-standings-r6.json  # 11-team championship
 │   ├── openf1-drivers-latest.json
 │   ├── r1-australia.json ... r6-monaco.json        # 6 race result files
-│   └── r1-australia-qualifying.json ... r6-monaco-qualifying.json  # 6 qualifying files
+│   ├── r1-australia-qualifying.json ... r6-monaco-qualifying.json  # 6 qualifying files
+│   └── driver-history.json          # 508 KB, 22 drivers × 3 years
 └── scripts/
     ├── update_f1_data.py       # 19 KB, weekly cron: race + standings + pace
     ├── build_issue_data.py     # 7 KB, derives car-issues-dnf.json
     ├── derive_pace.py          # 16 KB, derives pace-dashboard.json
+    ├── build_driver_history.py # 12 KB, one-time: 22 drivers × 2 years Jolpica
     ├── update_regulations.py   # 8 KB, yearly: validate / add-year / summary
     ├── test-*.js               # Playwright iOS WebKit test suite
     └── shot-*.js               # screenshot scripts for visual verification

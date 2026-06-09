@@ -82,11 +82,14 @@ honest — these were sized when the items were discussed, not after the fact.
 ### 7. Driver page
 - **Value:** 4/5 — uses the 24 cached quotes from The Race
 - **Cost:** 2-3 hrs
-- **What:** `drivers.html` — driver grid, tap driver → bio + season stats
-  (wins, podiums, points, best qualy) + 2-3 sourced quotes.
-- **Data:** Drivers from `drivers.json`, stats from `pace-dashboard.json`
-  (already per-driver), quotes cached in session memory (need to be
-  persisted to `data/driver-quotes.json` first).
+- **Status:** SHIPPED (Sprint 7). `driver.html` + `data/driver-history.json`
+  + `scripts/build_driver_history.py`. Bio + race-by-race narrative for
+  2024, 2025, 2026. Headlines auto-generated from real race data.
+- **Data:** Drivers from `drivers.json`, stats from Jolpica (2024 + 2025)
+  + local race files (2026 R1-R6). 22 drivers covered.
+- **Caveat:** The 24 cached quotes from The Race are not yet surfaced on
+  the page. Could be a Sprint 8 enhancement — add 1-2 sourced quotes per
+  driver to the bio block.
 
 ### 8. Constructors points trajectory chart
 - **Value:** 4/5 — gap-to-P1 over rounds tells the season story

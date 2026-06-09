@@ -445,6 +445,106 @@ qualifying column.
 
 ---
 
+## `data/driver-history.json`
+
+Per-driver per-season race history. 508 KB. Built by `build_driver_history.py`.
+
+```json
+{
+  "schema_version": 1,
+  "generated_utc": "2026-06-09T09:47:38Z",
+  "source": "Jolpica/Ergast API + local 2026 race files",
+  "drivers": {
+    "max_verstappen": {
+      "name": "Max Verstappen",
+      "nationality": "Dutch",
+      "permanent_number": "3",
+      "history_2024": {
+        "races_total": 24,
+        "podiums": 14,
+        "wins": 9,
+        "best_finish": "P1",
+        "points": 399,
+        "races": [
+          {
+            "round": 1,
+            "name": "Bahrain Grand Prix",
+            "date": "2024-03-02",
+            "qualifying": {"position": "1", "time": "1:29.179"},
+            "finish": {"position": "1", "positionText": "1", "time": "1:31:44.742", "status": "Finished", "points": 25},
+            "team": "Red Bull",
+            "laps": 57,
+            "grid": "1"
+          }
+        ]
+      },
+      "history_2025": {...},
+      "season_2026_so_far": {...}
+    }
+  }
+}
+```
+
+| Top field | Type | Notes |
+|---|---|---|
+| `schema_version` | int | 1 |
+| `generated_utc` | string ISO8601 UTC | When `build_driver_history.py` last wrote this file |
+| `source` | string | Where the data came from |
+| `drivers` | object | driver id → driver entry |
+
+| Driver entry field | Type | Notes |
+|---|---|---|
+| `name` | string | "Andrea Kimi Antonelli" |
+| `nationality` | string | "Italian" |
+| `permanent_number` | string | The car's permanent number |
+| `history_2024` | object or null | 2024 season; null if driver was not in F1 in 2024 |
+| `history_2025` | object or null | 2025 season; null if driver was not in F1 in 2025 |
+| `season_2026_so_far` | object | Current 2026 season, R1-R6 |
+
+| Season stat | Type | Notes |
+|---|---|---|
+| `races_total` | int | How many races in this season |
+| `podiums` | int | P1/P2/P3 finishes |
+| `wins` | int | P1 finishes |
+| `best_finish` | string | "P1" or "DNF" |
+| `points` | int | Championship points |
+| `races` | array of race records | One per round |
+
+| Race field | Type | Notes |
+|---|---|---|
+| `round` | int | 1-24 |
+| `name` | string | "Australian Grand Prix" |
+| `date` | string YYYY-MM-DD | Race date |
+| `qualifying` | object or null | {position, time}; null if qualifying data unavailable |
+| `finish.position` | string | "1"-"24" or "R" (Retired), "D" (DSQ) |
+| `finish.positionText` | string | Same as position |
+| `finish.time` | string | "1:31:44.742" (winner) or "+6.271" (gap) or empty |
+| `finish.status` | string | "Finished", "Retired", "Accident", etc. |
+| `finish.points` | int | Championship points awarded (0 for non-points positions) |
+| `team` | string | Team name (driver can switch teams year-to-year) |
+| `laps` | int | Laps completed |
+| `grid` | string | Starting grid position |
+
+**Source:** `build_driver_history.py` fetches 2024 + 2025 from Jolpica
+(`/f1/{year}/drivers/{id}/results.json` + `qualifying.json`) and reads
+2026 from local race files.
+**Refresh:** Manual. Run `python3 scripts/build_driver_history.py` when
+adding new drivers to the 2027 roster, or to re-fetch historical data.
+**Consumers:** `driver.html` (the bio + season narrative pages).
+
+**Driver id stability:** All 22 2026 driver IDs are stable across 2024
+→ 2025 → 2026 (verified: antonelli, hamilton, russell, leclerc, piastri,
+norris, max_verstappen, hadjar, lawson, gasly, bearman, colapinto,
+arvid_lindblad, sainz, albon, ocon, bortoleto, alonso, hulkenberg,
+bottas, perez, stroll). Rookies (hadjar, arvid_lindblad, bortoleto)
+have null `history_2024` since they were not in F1 in 2024.
+
+**Coverage:** 18 of 22 drivers have 2024 data (the 4 missing are the
+2025/2026 rookies), 19 of 22 have 2025 data (bottas + perez had F1
+sabbaticals; some rookies weren't in 2025 either), 22 of 22 have 2026 data.
+
+---
+
 ## `data/constructors.json`, `drivers.json`, `driver-team-map.json`, `helmets.json`
 
 Static reference data, captured 2026-06-06 from Jolpica + OpenF1. Not
