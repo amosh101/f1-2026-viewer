@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-08T17:57:53+00:00",
+  "generated_utc": "2026-06-08T19:57:13+00:00",
   "methodology": "Mechanical/electrical DNFs derived from official race classification status field. Excludes: Finished, Collision, Damage, Accident, Spun off, Withdrew, Did not start, +N Lap, 107% rule, Disqualified. Source: Jolpica Ergast mirror (F1 official).",
   "rounds_covered": [
     {

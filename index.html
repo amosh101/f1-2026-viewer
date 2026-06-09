@@ -720,6 +720,12 @@ a { color: inherit; text-decoration: none; }
           <div class="sub">Mechanical DNFs across the season</div>
           <span class="arrow">›</span>
         </button>
+        <button class="season-action" id="btnPace" data-go="pace">
+          <div class="k">PACE DASHBOARD</div>
+          <div class="v" id="paceFastest">—</div>
+          <div class="sub">Per-team race pace, qualy & gaps</div>
+          <span class="arrow">›</span>
+        </button>
       </div>
     </div>
     <div class="team-grid-wrap">
@@ -936,6 +942,7 @@ let CONSTRUCTOR_STANDINGS = [];  // [{position, points, wins, team: {id, name}},
 let DRIVER_STANDINGS = [];       // [{position, points, wins, driver: {id, familyName}, team: {id, name}}, ...]
 let PART_CHANGES = null;         // data/part-changes.json (hand-curated seed)
 let CAR_ISSUES = null;           // data/car-issues-dnf.json (auto-derived)
+let PACE_DASHBOARD = null;       // data/pace-dashboard.json (engineer view)
 
 async function fetchJSON(path) {
   const res = await fetch(path, { cache: 'no-cache' });
@@ -985,6 +992,12 @@ async function refreshLiveData() {
     console.log(`[data] car-issues-dnf.json: ${CAR_ISSUES.teams.length} teams, ${CAR_ISSUES.teams.reduce((s,t) => s + t.issue_count, 0)} issues`);
   } catch (e) {
     console.warn('[data] car-issues-dnf.json not available', e);
+  }
+  try {
+    PACE_DASHBOARD = await fetchJSON('./data/pace-dashboard.json');
+    console.log(`[data] pace-dashboard.json: ${PACE_DASHBOARD.teams.length} teams, ${PACE_DASHBOARD.rounds_covered.length} rounds`);
+  } catch (e) {
+    console.warn('[data] pace-dashboard.json not available', e);
   }
 }
 
@@ -2421,6 +2434,20 @@ function renderTeams() {
     $('#carIssuesTotal').textContent = '—';
   }
 
+  // PACE button: show the season-fastest team's pace delta
+  if (PACE_DASHBOARD && PACE_DASHBOARD.teams.length) {
+    const fastest = [...PACE_DASHBOARD.teams].sort((a, b) =>
+      (a.season.avg_pace_delta_to_winner_s ?? 99) - (b.season.avg_pace_delta_to_winner_s ?? 99)
+    )[0];
+    if (fastest && fastest.season.avg_pace_delta_to_winner_s != null) {
+      $('#paceFastest').textContent = `${fastest.season.avg_pace_delta_to_winner_s.toFixed(2)}s`;
+    } else {
+      $('#paceFastest').textContent = '—';
+    }
+  } else {
+    $('#paceFastest').textContent = '—';
+  }
+
   // Home-screen season-action buttons (bind on every renderTeams call so
   // the handlers exist the first time the user is on the home screen).
   const btnPC = $('#btnPartChanges');
@@ -2432,6 +2459,11 @@ function renderTeams() {
   if (btnCI && !btnCI.__bound) {
     btnCI.__bound = true;
     btnCI.onclick = () => { window.location.href = './car-issues.html'; };
+  }
+  const btnPace = $('#btnPace');
+  if (btnPace && !btnPace.__bound) {
+    btnPace.__bound = true;
+    btnPace.onclick = () => { window.location.href = './pace.html'; };
   }
 }
 

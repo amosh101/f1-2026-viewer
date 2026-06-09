@@ -33,6 +33,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.error
@@ -204,6 +205,16 @@ def fetch_rounds_to_refresh(
         selected[-1]["round"],
     )
     return selected
+
+
+def fetch_all_completed_rounds(
+    races: list[dict[str, Any]],
+    today: dt.date,
+    logger: logging.Logger,
+) -> list[dict[str, Any]]:
+    """All completed rounds (used for qualifying, which is cheap and
+    backfills any gaps the amendment window doesn't touch)."""
+    return [r for r in races if is_completed(r, today)]
 
 
 def fetch_round_files(
@@ -403,6 +414,23 @@ def main() -> int:
             logger.error("R%s failed: %s", race["round"], e)
             continue
 
+    # Backfill qualifying for any completed rounds NOT in the amendment window
+    # (cheap, and lets the pace-dashboard show full season Q data instead of
+    # only the latest 3 rounds).
+    all_completed = fetch_all_completed_rounds(races, today, logger)
+    selected_rounds = {int(r["round"]) for r in selected}
+    qual_backfill = [r for r in all_completed if int(r["round"]) not in selected_rounds]
+    if qual_backfill and not args.dry_run:
+        logger.info("backfilling qualifying for %d older rounds", len(qual_backfill))
+        for race in qual_backfill:
+            try:
+                _results, qual = fetch_round_files(race, logger, args.dry_run)
+                # results file may already exist; that's fine, qualifying will overwrite if changed
+                if qual is not None:
+                    pass  # already written by fetch_round_files
+            except Exception as e:
+                logger.warning("qualifying backfill failed for R%s: %s", race["round"], e)
+
     if not args.dry_run:
         try:
             fetch_standings(logger, args.dry_run, latest_round)
@@ -439,7 +467,6 @@ def main() -> int:
         # Re-derive car-issues-dnf.json from the per-race files so it stays
         # fresh as new races are added. The script is a sibling in scripts/.
         try:
-            import subprocess
             res = subprocess.run(
                 [sys.executable, str(Path(__file__).parent / "build_issue_data.py")],
                 capture_output=True,
@@ -456,6 +483,25 @@ def main() -> int:
                 )
         except Exception as e:
             logger.error("could not invoke build_issue_data.py: %s", e)
+
+        # Re-derive pace-dashboard.json (per-team pace dashboard, engineer view).
+        try:
+            res = subprocess.run(
+                [sys.executable, str(Path(__file__).parent / "derive_pace.py")],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if res.returncode == 0:
+                logger.info("derive_pace.py: ok")
+            else:
+                logger.error(
+                    "derive_pace.py failed: rc=%s stderr=%s",
+                    res.returncode,
+                    res.stderr[-500:] if res.stderr else "",
+                )
+        except Exception as e:
+            logger.error("could not invoke derive_pace.py: %s", e)
 
     logger.info("=== update_f1_data.py done (%d rounds updated) ===", written)
     return 0

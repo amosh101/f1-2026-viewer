@@ -21,7 +21,11 @@
         "team": "Ferrari"
       }
     ],
-    "pole": null,
+    "pole": {
+      "driver": "Russell",
+      "team": "Mercedes",
+      "time": "1:18.518"
+    },
     "fastest_lap": {
       "driver": "Verstappen",
       "team": "Red Bull",
@@ -52,7 +56,11 @@
         "team": "Ferrari"
       }
     ],
-    "pole": null,
+    "pole": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:32.064"
+    },
     "fastest_lap": {
       "driver": "Antonelli",
       "team": "Mercedes",
@@ -83,7 +91,11 @@
         "team": "Ferrari"
       }
     ],
-    "pole": null,
+    "pole": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:28.778"
+    },
     "fastest_lap": {
       "driver": "Antonelli",
       "team": "Mercedes",
