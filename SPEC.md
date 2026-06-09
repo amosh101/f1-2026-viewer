@@ -1,5 +1,20 @@
 # F1 2026 Viewer — Browser MVP
 
+> **This is the original design + scope spec from 2026-06-06**, before any
+> code was written. The shipped product has evolved since — see:
+>
+> - `README.md` for the current page list and entry points
+> - `BUILD-REPORT.md` for the verified current state
+> - `ARCHITECTURE.md` for the design decisions that emerged
+> - `ROADMAP.md` for what's planned next
+> - `DATA-REFERENCE.md` for current data file schemas
+> - `OPERATIONS.md` for server, cron, tests, iPhone workflow
+>
+> Kept for historical reference. The numbers and shape described below no
+> longer reflect the shipped codebase (e.g. we no longer have a single
+> 76 KB `index.html` — we have 6 pages, 4 cron scripts, and a 540 KB
+> data directory).
+
 ## Mission
 An interactive browser experience that teaches the 2026 F1 regulation era
 through a sleek, dark, full-bleed UI. Pick a team, see the car, tap parts,
