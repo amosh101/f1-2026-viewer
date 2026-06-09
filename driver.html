@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>F1 2026 — Driver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050507;
+    --surface: #0a0a0f;
+    --ink: #f0f0fa;
+    --ink-muted: rgba(240, 240, 250, 0.55);
+    --ink-faint: rgba(240, 240, 250, 0.18);
+    --ghost-bg: rgba(240, 240, 250, 0.06);
+    --ghost-bd: rgba(240, 240, 250, 0.22);
+    --ghost-bd-hi: rgba(240, 240, 250, 0.5);
+    /* --accent and --team-color are set per-driver in JS from the
+       current team's livery. --accent is the brightness version used
+       for text/pills, --team-color is the raw color from TEAM_COLORS. */
+    --accent: #00d7b6;
+    --team-color: #00d7b6;
+    --ok: #46d39a;
+    --podium: #ffd700;
+    --dnf: #ff4d4d;
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --t-fast: 180ms;
+    --t-med: 320ms;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+  body { min-height: 100svh; padding-bottom: env(safe-area-inset-bottom); }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* TOP BAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px calc(14px + env(safe-area-inset-top)) 18px;
+    background: linear-gradient(180deg, rgba(5,5,7,0.97), rgba(5,5,7,0.75));
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--ghost-bd);
+  }
+  .topbar .brand { display: flex; gap: 10px; align-items: center; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-muted); font-weight: 600; }
+  .topbar .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .topbar .back { padding: 6px 12px; border: 1px solid var(--ghost-bd); border-radius: 99px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+  .topbar .back:hover { background: var(--ghost-bg); }
+
+  /* PAGE */
+  .page { max-width: 760px; margin: 0 auto; padding: clamp(20px, 4vw, 36px) clamp(16px, 4vw, 28px) 60px; }
+  .page-head { margin-bottom: 24px; }
+  .page-head h1 { font-size: clamp(28px, 6vw, 44px); font-weight: 800; letter-spacing: -0.02em; line-height: 0.95; margin-bottom: 8px; }
+  .page-head h1 .num { color: var(--ink-muted); font-weight: 500; }
+  .page-head .meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); margin-top: 8px; }
+  .page-head .meta b { color: var(--ink); font-weight: 600; }
+
+  /* BIO CARD */
+  .bio {
+    display: grid; grid-template-columns: 1fr; gap: 14px;
+    padding: 18px 20px;
+    background: var(--ghost-bg);
+    border: 1px solid var(--ghost-bd);
+    border-radius: 14px;
+    margin-bottom: 28px;
+  }
+  .bio-row { display: flex; align-items: baseline; gap: 12px; font-size: 13px; }
+  .bio-row .k { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); min-width: 110px; }
+  .bio-row .v { color: var(--ink); font-weight: 500; }
+  .bio-row .v.team { color: var(--team-color); }
+
+  /* SEASON SECTION */
+  .season { margin-bottom: 32px; }
+  .season-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 10px; border-bottom: 1px solid var(--ghost-bd);
+    margin-bottom: 14px;
+  }
+  .season-head h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .season-head .year-tag { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-muted); }
+  .season-head .active-tag { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; background: var(--team-color-alpha); border: 1px solid var(--team-color); color: var(--team-color); }
+  .season.current { border-left: 3px solid var(--team-color); padding-left: 14px; margin-left: -17px; }
+
+  /* SEASON STATS BAR */
+  .season-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--ghost-bd);
+    border: 1px solid var(--ghost-bd);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .season-stat { background: var(--surface); padding: 12px 10px; text-align: center; }
+  .season-stat .v { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  .season-stat .v.win { color: var(--podium); }
+  .season-stat .v.podium { color: var(--ok); }
+  .season-stat .v.pts { color: var(--team-color); }
+  .season-stat .k { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); margin-top: 2px; }
+
+  /* RACE LIST */
+  .race-list { display: flex; flex-direction: column; }
+  .race {
+    display: grid; grid-template-columns: 28px 1fr auto; gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--ink-faint);
+    align-items: start;
+  }
+  .race:last-child { border-bottom: 0; }
+  .race .round { font-size: 10px; letter-spacing: 0.18em; color: var(--ink-muted); padding-top: 2px; }
+  .race .body { min-width: 0; }
+  .race .name { font-size: 14px; font-weight: 600; letter-spacing: -0.005em; margin-bottom: 3px; }
+  .race .date { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 6px; }
+  .race .headline { font-size: 13px; line-height: 1.5; color: var(--ink); margin-bottom: 6px; }
+  .race .headline b { font-weight: 700; }
+  .race .headline em { font-style: normal; color: var(--ink-muted); }
+  .race .detail { font-size: 11px; color: var(--ink-muted); display: flex; gap: 12px; flex-wrap: wrap; }
+  .race .detail span b { color: var(--ink); font-weight: 600; }
+  .race .finish {
+    text-align: right; min-width: 64px;
+    font-size: 16px; font-weight: 800; letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .race .finish.win { color: var(--podium); }
+  .race .finish.podium { color: var(--ok); }
+  .race .finish.dnf { color: var(--dnf); font-size: 13px; }
+  .race .finish .pos-text { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); display: block; margin-top: 2px; font-weight: 500; }
+
+  /* EMPTY STATE */
+  .empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 13px;
+    background: var(--ghost-bg);
+    border: 1px solid var(--ghost-bd);
+    border-radius: 10px;
+  }
+  .empty b { color: var(--ink); }
+
+  /* DATA STAMP */
+  .data-stamp {
+    margin-top: 32px;
+    padding-top: 18px;
+    border-top: 1px solid var(--ink-faint);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span> F1 2026 · Driver</div>
+    <a class="back" href="./index.html?v=drback1">← HOME</a>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <h1 id="driverName">—</h1>
+      <div class="meta" id="driverMeta"></div>
+    </div>
+
+    <div class="bio" id="bio"></div>
+
+    <div id="seasons"></div>
+
+    <div class="data-stamp" id="dataStamp">DATA · LOADING</div>
+  </main>
+
+  <script>
+    // Team color palette — matches the rest of the app. Real 2026 liveries.
+    const TEAM_COLORS = {
+      mercedes:    '#00D7B6',
+      ferrari:     '#DC0000',
+      red_bull:    '#1E40AF',
+      mclaren:     '#FF8000',
+      aston_martin:'#006F62',
+      alpine:      '#0090D2',
+      williams:    '#005AFF',
+      rb:          '#6692FF',
+      audi:        '#BB1E1E',
+      haas:        '#B6BABD',
+      cadillac:    '#C9A961',
+    };
+    // Resolve a team display name (from the JSON) to a constructorId
+    // (lowercase, spaces → underscores, strip suffixes like "F1 Team").
+    function resolveTeamId(teamName) {
+      if (!teamName) return null;
+      const k = teamName.toLowerCase()
+        .replace(/ f1 team$/i, '')
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      if (TEAM_COLORS[k]) return k;
+      // Common aliases
+      if (k === 'redbull') return 'red_bull';
+      if (k === 'racing_bulls' || k === 'rb' || k === 'alphatauri') return 'rb';
+      return null;
+    }
+    // Convert a hex color to rgba(N,N,N,0.15) for translucent backgrounds.
+    function hexToAlphaBg(hex, alpha) {
+      const h = hex.replace('#', '');
+      const r = parseInt(h.slice(0, 2), 16);
+      const g = parseInt(h.slice(2, 4), 16);
+      const b = parseInt(h.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    // Apply team color theming to the document root
+    function applyTeamTheme(teamId) {
+      const color = TEAM_COLORS[teamId] || '#00d7b6';
+      const root = document.documentElement;
+      root.style.setProperty('--team-color', color);
+      root.style.setProperty('--team-color-alpha', hexToAlphaBg(color, 0.12));
+      // Brightness-adjusted accent for text/pills
+      root.style.setProperty('--accent', color);
+    }
+
+    let DRIVER_HISTORY = null;
+    let DRIVERS_INDEX = null;  // driverId → {name, nationality, dob, code, number, team}
+    let currentDriverId = null;
+
+    async function fetchJSON(path) {
+      const res = await fetch(path, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`);
+      return res.json();
+    }
+
+    function ageYears(dobStr) {
+      if (!dobStr) return null;
+      const dob = new Date(dobStr);
+      const now = new Date('2026-06-09');
+      let age = now.getFullYear() - dob.getFullYear();
+      const m = now.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+      return age;
+    }
+
+    function ordinal(n) {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    function posName(posText) {
+      // '1' → 'win', '2'/'3' → 'podium', 'R' → 'DNF'
+      if (posText === '1') return 'win';
+      if (posText === '2' || posText === '3') return 'podium';
+      if (posText === 'R' || posText === 'D' || posText === 'E' || posText === 'W' || posText === 'F' || posText === 'N') return 'dnf';
+      return 'finish';
+    }
+
+    function posShort(posText) {
+      if (posText === '1' || posText === '2' || posText === '3') return 'P' + posText;
+      if (posText === 'R') return 'DNF';
+      if (posText === 'D') return 'DSQ';
+      return posText;
+    }
+
+    // Generate a story-style headline for a single race, given the race record
+    // and the season context (is this the first win? first podium? etc.)
+    function generateHeadline(race, ctx) {
+      const name = ctx.driverName.split(' ').slice(-1)[0]; // family name
+      const pos = race.finish.positionText;
+      const posInt = parseInt(pos, 10);
+      const qualPos = race.qualifying ? parseInt(race.qualifying.position, 10) : null;
+      const team = race.team;
+
+      // DNF
+      if (posName(pos) === 'dnf') {
+        const lap = race.laps;
+        return `${name} retired from the ${race.name.replace(' Grand Prix', ' GP')} after ${lap} laps.`;
+      }
+      // Win
+      if (pos === '1') {
+        let h = `${name} wins the ${race.name.replace(' Grand Prix', ' GP')}`;
+        if (ctx.isFirstWin) h = `${name} takes his first win of the season at the ${race.name.replace(' Grand Prix', ' GP')}`;
+        if (qualPos && qualPos > 1) h += `, recovering from P${qualPos} on the grid`;
+        h += '.';
+        return h;
+      }
+      // Podium
+      if (pos === '2' || pos === '3') {
+        let h = `${name} takes ${pos === '2' ? 'second' : 'third'}`;
+        if (ctx.isFirstPodium) h += ` — a first podium of the season`;
+        h += ` at the ${race.name.replace(' Grand Prix', ' GP')}`;
+        if (qualPos && qualPos > posInt) h += `, up from P${qualPos}`;
+        if (qualPos && qualPos < posInt) h += `, after starting P${qualPos}`;
+        h += '.';
+        return h;
+      }
+      // Out of points (P11+)
+      if (posInt >= 11) {
+        if (qualPos && qualPos < posInt) {
+          return `${name} drops to P${pos} at the ${race.name.replace(' Grand Prix', ' GP')}, unable to recover from a P${qualPos} start.`;
+        }
+        return `${name} finishes a quiet P${pos} at the ${race.name.replace(' Grand Prix', ' GP')}.`;
+      }
+      // Mid-pack
+      if (qualPos && qualPos < posInt) {
+        return `${name} finishes P${pos} at the ${race.name.replace(' Grand Prix', ' GP')}, down from a P${qualPos} start.`;
+      }
+      if (qualPos && qualPos > posInt) {
+        return `${name} recovers to P${pos} at the ${race.name.replace(' Grand Prix', ' GP')} from a P${qualPos} grid slot.`;
+      }
+      return `${name} takes P${pos} at the ${race.name.replace(' Grand Prix', ' GP')}.`;
+    }
+
+    function renderHeader(driver) {
+      const family = driver.name.split(' ').slice(-1)[0];
+      $('#driverName').innerHTML = `${driver.name.split(' ').slice(0, -1).join(' ')} <span class="num">${family.toUpperCase()}</span>`;
+      const age = ageYears(driver.dob);
+      const meta = $('#driverMeta');
+      meta.innerHTML = '';
+      const items = [];
+      if (driver.code) items.push(`<span><b>${driver.code}</b></span>`);
+      if (driver.permanent_number) items.push(`<span>CAR <b>#${driver.permanent_number}</b></span>`);
+      if (driver.nationality) items.push(`<span>${driver.nationality.toUpperCase()}</span>`);
+      if (age != null) items.push(`<span><b>${age}</b> YRS</span>`);
+      meta.innerHTML = items.join('');
+    }
+
+    function renderBio(driver) {
+      const age = ageYears(driver.dob);
+      const team2026 = driver.season_2026_so_far ? driver.season_2026_so_far.races[0]?.team : null;
+      const bio = $('#bio');
+      bio.innerHTML = `
+        <div class="bio-row"><div class="k">CURRENT TEAM</div><div class="v team">${team2026 || '—'}</div></div>
+        <div class="bio-row"><div class="k">NATIONALITY</div><div class="v">${driver.nationality || '—'}</div></div>
+        <div class="bio-row"><div class="k">DATE OF BIRTH</div><div class="v">${driver.dob || '—'}${age != null ? ` · ${age} years` : ''}</div></div>
+        <div class="bio-row"><div class="k">PERMANENT #</div><div class="v">${driver.permanent_number ? '#' + driver.permanent_number : '—'}</div></div>
+        <div class="bio-row"><div class="k">CODE</div><div class="v">${driver.code || '—'}</div></div>
+      `;
+    }
+
+    function renderSeason(yearKey, season, opts) {
+      const sec = document.createElement('section');
+      sec.className = 'season' + (opts.isCurrent ? ' current' : '');
+      const isCurrent = opts.isCurrent;
+      const yearLabel = isCurrent ? '2026' : yearKey.replace('history_', '');
+
+      let stats = '';
+      if (season) {
+        stats = `
+          <div class="season-stats">
+            <div class="season-stat"><div class="v win">${season.wins}</div><div class="k">Wins</div></div>
+            <div class="season-stat"><div class="v podium">${season.podiums}</div><div class="k">Podiums</div></div>
+            <div class="season-stat"><div class="v pts">${season.points}</div><div class="k">Points</div></div>
+            <div class="season-stat"><div class="v">${season.races_total}</div><div class="k">Races</div></div>
+          </div>
+        `;
+      }
+
+      let body = '';
+      if (!season) {
+        body = `<div class="empty"><b>${yearLabel}</b>: No Formula 1 races that year. ${isCurrent ? 'Races will appear here as the season progresses.' : 'Driver was racing in another series (e.g. F2, reserve role, sabbatical).'}</div>`;
+      } else if (!season.races.length) {
+        body = `<div class="empty"><b>${yearLabel}</b>: 0 races.</div>`;
+      } else {
+        // Track first wins / first podiums for headline generation
+        const seen = { win: 0, podium: 0 };
+        const racesHtml = season.races.map((race, i) => {
+          const isFirstWin = (posName(race.finish.positionText) === 'win' && seen.win === 0);
+          const isFirstPodium = (posName(race.finish.positionText) === 'podium' && seen.podium === 0);
+          if (posName(race.finish.positionText) === 'win') seen.win++;
+          if (posName(race.finish.positionText) === 'podium') seen.podium++;
+          const headline = generateHeadline(race, {
+            driverName: opts.driverName,
+            isFirstWin,
+            isFirstPodium,
+          });
+          const cls = posName(race.finish.positionText);
+          const qualDetail = race.qualifying
+            ? `Qualifying <b>P${race.qualifying.position}</b>${race.qualifying.time ? ' · ' + race.qualifying.time : ''}`
+            : '';
+          const statusDetail = race.finish.time
+            ? (race.finish.time.startsWith('+') ? 'Gap ' + race.finish.time : 'Time ' + race.finish.time)
+            : race.finish.status;
+          return `
+            <div class="race">
+              <div class="round">R${String(race.round).padStart(2, '0')}</div>
+              <div class="body">
+                <div class="name">${race.name}</div>
+                <div class="date">${race.date}</div>
+                <div class="headline">${headline}</div>
+                <div class="detail">
+                  ${qualDetail ? `<span>${qualDetail}</span>` : ''}
+                  <span>Status <b>${race.finish.status}</b>${statusDetail && statusDetail !== race.finish.status ? ' · ' + statusDetail : ''}</span>
+                  <span>Team <b>${race.team}</b></span>
+                </div>
+              </div>
+              <div class="finish ${cls}">
+                ${posShort(race.finish.positionText)}
+                <span class="pos-text">${race.finish.points} pts</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+        body = `<div class="race-list">${racesHtml}</div>`;
+      }
+
+      sec.innerHTML = `
+        <div class="season-head">
+          <h2>${yearLabel}</h2>
+          <div>
+            ${isCurrent ? '<span class="active-tag">CURRENT · IN PROGRESS</span>' : `<span class="year-tag">${season ? season.races_total + ' RACES' : 'NOT IN F1'}</span>`}
+          </div>
+        </div>
+        ${stats}
+        ${body}
+      `;
+      return sec;
+    }
+
+    async function init() {
+      // Read driver id from query string
+      const params = new URLSearchParams(location.search);
+      currentDriverId = params.get('id');
+      if (!currentDriverId) {
+        document.querySelector('.page').innerHTML = '<div class="empty"><b>No driver ID</b> in the URL. Go back to a team page and tap a driver card.</div>';
+        return;
+      }
+
+      try {
+        // Load driver history (the seasons) and the drivers.json roster
+        const [hist, drivers] = await Promise.all([
+          fetchJSON('./data/driver-history.json'),
+          fetchJSON('./data/drivers.json'),
+        ]);
+        DRIVER_HISTORY = hist;
+        DRIVERS_INDEX = drivers.MRData ? drivers.MRData.DriverTable.Drivers : drivers.drivers || drivers;
+        const driver = DRIVER_HISTORY.drivers[currentDriverId];
+        if (!driver) {
+          document.querySelector('.page').innerHTML = `<div class="empty"><b>Driver "${currentDriverId}" not found</b> in driver-history.json.</div>`;
+          return;
+        }
+
+        // Find this driver in the 2026 roster (for DOB, code, team from current standings)
+        let rosterEntry = null;
+        if (Array.isArray(DRIVERS_INDEX)) {
+          rosterEntry = DRIVERS_INDEX.find(d => d.driverId === currentDriverId);
+        } else if (DRIVERS_INDEX && DRIVERS_INDEX[currentDriverId]) {
+          rosterEntry = DRIVERS_INDEX[currentDriverId];
+        }
+        driver.dob = rosterEntry ? rosterEntry.dateOfBirth : null;
+        driver.code = rosterEntry ? rosterEntry.code : null;
+        if (rosterEntry && rosterEntry.permanentNumber && !driver.permanent_number) {
+          driver.permanent_number = rosterEntry.permanentNumber;
+        }
+
+        console.log(`[driver] loaded ${driver.name}, 2024=${driver.history_2024 ? 'Y' : 'N'}, 2025=${driver.history_2025 ? 'Y' : 'N'}, 2026=${driver.season_2026_so_far ? 'Y' : 'N'}`);
+
+        // Apply team color theme from the driver's CURRENT (2026) team
+        const currentTeamName = driver.season_2026_so_far && driver.season_2026_so_far.races.length
+          ? driver.season_2026_so_far.races[0].team
+          : (rosterEntry ? rosterEntry.constructorName || null : null);
+        const teamId = resolveTeamId(currentTeamName);
+        if (teamId) {
+          applyTeamTheme(teamId);
+          console.log(`[driver] theme: ${currentTeamName} → ${teamId} → ${TEAM_COLORS[teamId]}`);
+        } else {
+          console.log(`[driver] theme: no team resolved (${currentTeamName}), keeping default teal`);
+        }
+
+        renderHeader(driver);
+        renderBio(driver);
+
+        const seasonsEl = $('#seasons');
+        seasonsEl.innerHTML = '';
+        // Order: 2026 (current, in progress) → 2025 → 2024 (oldest)
+        // Newest first — reader keeps up with current state.
+        seasonsEl.appendChild(renderSeason('season_2026_so_far', driver.season_2026_so_far, {
+          driverName: driver.name,
+          isCurrent: true,
+        }));
+        seasonsEl.appendChild(renderSeason('history_2025', driver.history_2025, {
+          driverName: driver.name,
+        }));
+        seasonsEl.appendChild(renderSeason('history_2024', driver.history_2024, {
+          driverName: driver.name,
+        }));
+
+        const stamp = `DATA · DRIVER HISTORY · ${Object.keys(DRIVER_HISTORY.drivers).length} DRIVERS · ${teamId ? teamId.toUpperCase() + ' THEME' : 'DEFAULT THEME'} · GENERATED ${DRIVER_HISTORY.generated_utc}`;
+        $('#dataStamp').textContent = stamp;
+      } catch (e) {
+        console.error('[driver] load failed', e);
+        $('#dataStamp').textContent = 'DATA · LOAD FAILED';
+      }
+    }
+
+    function $(s) { return document.querySelector(s); }
+
+    init();
+  </script>
+</body>
+</html>

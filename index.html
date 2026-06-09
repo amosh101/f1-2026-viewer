@@ -440,6 +440,23 @@ a { color: inherit; text-decoration: none; }
   border-radius: 50%;
   filter: blur(1px);
 }
+.driver-card.clickable {
+  cursor: pointer;
+  text-align: left;
+  font: inherit; color: inherit;
+  width: 100%;
+  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.driver-card.clickable:hover { transform: translateY(-2px); border-color: var(--ghost-bd-hi); background: #10101a; }
+.driver-card.clickable:active { transform: scale(0.99); }
+.driver-card.clickable::after {
+  content: '›';
+  position: absolute; top: 50%; right: 18px;
+  transform: translateY(-50%);
+  font-size: 22px; color: var(--ink-muted); font-weight: 300;
+  opacity: 0; transition: opacity var(--t-fast) var(--ease);
+}
+.driver-card.clickable:hover::after { opacity: 1; color: var(--accent); }
 
 .cta-row {
   margin-top: clamp(28px, 5vh, 60px);
@@ -2527,8 +2544,10 @@ function renderTeamDetail() {
   const row = $('#driverRow');
   row.innerHTML = '';
   drivers.forEach(d => {
-    const card = document.createElement('div');
-    card.className = 'driver-card';
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'driver-card clickable';
+    card.dataset.driverId = d.driverId;
     card.style.setProperty('--helmet-color', helmetColor(team.constructorId));
     card.innerHTML = `
       <div class="num">${d.permanentNumber}</div>
@@ -2539,6 +2558,9 @@ function renderTeamDetail() {
       </div>
       <div class="helmet" aria-label="helmet"></div>
     `;
+    card.onclick = () => {
+      window.location.href = `./driver.html?id=${encodeURIComponent(d.driverId)}&v=drv1`;
+    };
     row.appendChild(card);
   });
   // Team points (sum from season results)
