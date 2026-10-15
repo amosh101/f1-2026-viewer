@@ -199,7 +199,7 @@ The end-to-end verification path, every time:
 1. **Make the change.** Edit HTML / JSON / script on the box.
 2. **Restart the server** (if you changed the python server, not the
    data files). `kill $(cat /tmp/f1-viewer-server.pid) && nohup python3
-   -m http.server 8081 --bind 100.91.143.50 > /tmp/f1-viewer-server.log
+   -m http.server 8081 --bind TAILSCALE_IP > /tmp/f1-viewer-server.log
    2>&1 &`
 3. **Playwright test** — `node scripts/test-FEATURE.js`. Confirm no
    errors, all assertions pass.
@@ -220,7 +220,7 @@ manually. The cache buster is the safety net.
 ### "I changed a JSON file but the page shows old data"
 
 - iPhone: hard-refresh (long-press reload, or `?v=N` in URL).
-- Local: `curl http://100.91.143.50:8081/data/FILE.json | head` to confirm
+- Local: `curl http://TAILSCALE_IP:8081/data/FILE.json | head` to confirm
   the new content is being served.
 - If it's still old: `ps aux | grep "http.server"` to confirm the server
   is running. `python3 -m http.server` doesn't cache.

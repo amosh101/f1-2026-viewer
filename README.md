@@ -5,7 +5,7 @@
 > a fast read on rivals' pace, parts, reliability, qualifying, and teammate
 > deltas.
 
-**Live (Tailscale only):** `http://100.91.143.50:8081/`
+**Live:** Tailscale-only (private network), port 8081
 **Public access:** blocked by design (iptables rule on the box).
 
 ## Pages
