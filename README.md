@@ -100,9 +100,9 @@ f1-2026-viewer/
 
 ```bash
 # Tailscale-only static server (matches prod)
-python3 -m http.server 8081 --bind 100.91.143.50
+python3 -m http.server 8081 --bind TAILSCALE_IP
 
-# or for local dev (will hang on 100.91.143.50 from outside Tailscale)
+# or for local dev (will hang on TAILSCALE_IP from outside Tailscale)
 python3 -m http.server 8081 --bind 127.0.0.1
 ```
 

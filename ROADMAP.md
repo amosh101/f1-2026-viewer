@@ -194,16 +194,16 @@ honest — these were sized when the items were discussed, not after the fact.
 
 ## Suggested next-session menu
 
-If Sir wants a quick session, do P0 (5 hours, 3 items).
-If Sir wants a heavier push, do P0 + P1 #4 (8 hours, 4 items).
-If Sir wants the next "killer feature", do P1 #6 (tyre deg) — that's what
+If the owner wants a quick session, do P0 (5 hours, 3 items).
+If the owner wants a heavier push, do P0 + P1 #4 (8 hours, 4 items).
+If the owner wants the next "killer feature", do P1 #6 (tyre deg) — that's what
 turns the portal from "results journal" to "strategy tool".
 
 ---
 
 ## What we'll never do
 
-- Mock data of any kind (Sir's mandate)
+- Mock data of any kind (the owner's mandate)
 - Public access (Tailscale-only is the security model)
 - Heavy frameworks (React, Vue, Svelte) — the static-only model is the point
 - Auto-commits from cron — git is for human review

@@ -25,12 +25,12 @@ curl -sS --max-time 4 "http://$TAILSCALE_IP:8081/" -o /dev/null \
   -w "status: HTTP %{http_code}\n"
 ```
 
-**Why Tailscale-only:** Sir's home network is reachable via Tailscale
+**Why Tailscale-only:** the owner's home network is reachable via Tailscale
 (100.64.0.0/10). The box has an iptables rule that drops all
 non-Tailscale traffic to port 8081. This means:
 
-- Sir's iPhone (on Tailscale): works.
-- Sir's other machines (on Tailscale): work.
+- the owner's iPhone (on Tailscale): works.
+- the owner's other machines (on Tailscale): work.
 - Anyone else: blocked at the firewall.
 
 To verify the firewall rule is in place:
@@ -180,9 +180,9 @@ const { chromium, devices } = require('/root/.npm/_npx/e41f203b7505f1fb/node_mod
 
 ### Why Playwright iPhone 13 WebKit
 
-Sir's primary device is an iPhone. iOS Safari has unique WebKit quirks
+the owner's primary device is an iPhone. iOS Safari has unique WebKit quirks
 that Chrome doesn't reproduce. Testing in iPhone 13 WebKit is the closest
-thing to testing on Sir's actual phone, short of doing it manually.
+thing to testing on the owner's actual phone, short of doing it manually.
 
 ### Cache buster in tests
 
@@ -204,13 +204,13 @@ The end-to-end verification path, every time:
 3. **Playwright test** — `node scripts/test-FEATURE.js`. Confirm no
    errors, all assertions pass.
 4. **Telegram screenshots** — `node scripts/shot-FEATURE.js`, then send
-   the PNG to Sir via `send_message` with `MEDIA:/path/...png`.
-5. **Sir tests on iPhone** — Sir opens the URL, hard-refreshes (or uses
+   the PNG to the owner via `send_message` with `MEDIA:/path/...png`.
+5. **the owner tests on iPhone** — the owner opens the URL, hard-refreshes (or uses
    `?v=N`), confirms the feature works on his actual device.
-6. **Sir signs off** — only then commit + push.
+6. **the owner signs off** — only then commit + push.
 
 **Why hard-refresh:** iOS Safari caches everything. A deploy that doesn't
-include a `?v=N` change won't be visible to Sir until he clears his cache
+include a `?v=N` change won't be visible to the owner until he clears his cache
 manually. The cache buster is the safety net.
 
 ---

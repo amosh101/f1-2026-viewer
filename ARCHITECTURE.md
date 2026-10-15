@@ -117,7 +117,7 @@ on iPhone.
    - Writes `pace-dashboard.json`
 
 **No auto-commit.** The cron updates the JSONs; git is a separate step done
-by Sir or assistant manually. This keeps the policy clear: data refreshes
+by the owner or assistant manually. This keeps the policy clear: data refreshes
 are automatic, code changes are deliberate.
 
 ---
@@ -148,14 +148,14 @@ impact notes are surfaced cleanly.
 
 **Why:** Race finishes are typically 17:00-19:00 local Europe. CAT is
 UTC+2, so a race finishing at 19:00 local = 17:00 UTC. By 21:00 UTC (23:00
-CAT) the Jolpica results are stable. Sir wanted the refresh to land when
+CAT) the Jolpica results are stable. the owner wanted the refresh to land when
 he'd be planning for the next week.
 
 **Trade-off:** Could miss late-amendment results. Mitigation: amendment
 window of 3 latest rounds, so even if R6's results update on Tuesday, the
 next Sunday's cron will catch R4-R6.
 
-**Why not auto-commit:** Sir's policy — git is for human + assistant review,
+**Why not auto-commit:** the owner's policy — git is for human + assistant review,
 not for cron. Auto-commits can ship broken JSON.
 
 ### 3. Race-average pace, not stint pace (Sprint 5)
@@ -190,7 +190,7 @@ and the team card showing 0 changes honestly.
 a public API at runtime, (b) hand-curated and source-attributed, or
 (c) auto-derived from (a) or (b).
 
-**Why:** Sir's mandate after the `flight_scraper.py` incident
+**Why:** the owner's mandate after the `flight_scraper.py` incident
 (2026-04-08). Mock data erodes trust in everything produced.
 
 **Implementation:** All JSONs in `data/` are real. `regulations.json` is
@@ -219,7 +219,7 @@ Until then, the constraint is honest.
 
 **Decision:** Test against Playwright iPhone 13 WebKit, not Chrome.
 
-**Why:** Sir's actual device is iPhone. If it doesn't work on WebKit, it
+**Why:** the owner's actual device is iPhone. If it doesn't work on WebKit, it
 doesn't work for him. Chrome is irrelevant.
 
 **Trade-off:** Playwright tests are 5-10x slower than Chrome unit tests.
