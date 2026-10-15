@@ -12,7 +12,7 @@ Read this before making structural changes.
         ┌─────────────────────────────────────┐
         │   Tailscale-only static server      │
         │   python3 -m http.server 8081       │
-        │   bound to 100.91.143.50            │
+        │   bound to Tailscale interface       │
         └────────────┬────────────────────────┘
                      │
    ┌─────────────────┼─────────────────────────────────┐

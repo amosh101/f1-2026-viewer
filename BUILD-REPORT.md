@@ -1,7 +1,7 @@
 # F1 2026 Viewer — Build Report
 
 **Last updated:** 2026-06-09
-**URL:** `http://100.91.143.50:8081/` (Tailscale-only, public IP blocked)
+**URL:** Tailscale-only internal address, port 8081 (public interface blocked)
 **Branch:** `main`
 **HEAD commit:** `45254e9 feat: pace dashboard + PACE DASHBOARD home button + per-lap qualifying backfill`
 

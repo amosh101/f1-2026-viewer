@@ -16,3 +16,6 @@ scripts/*.log
 .idea/
 *.swp
 .DS_Store
+
+# Internal audit notes — never published
+.audits/

@@ -13,15 +13,15 @@ to the Tailscale IP only (not public).
 ```bash
 # Start (foreground)
 cd ~/.hermes/workspace/projects/f1-2026-viewer
-python3 -m http.server 8081 --bind 100.91.143.50
+python3 -m http.server 8081 --bind "$TAILSCALE_IP"
 
 # Start (background, with logging)
-nohup python3 -m http.server 8081 --bind 100.91.143.50 \
+nohup python3 -m http.server 8081 --bind "$TAILSCALE_IP" \
   > /tmp/f1-viewer-server.log 2>&1 &
 echo $! > /tmp/f1-viewer-server.pid
 
 # Check it's running
-curl -sS --max-time 4 http://100.91.143.50:8081/ -o /dev/null \
+curl -sS --max-time 4 "http://$TAILSCALE_IP:8081/" -o /dev/null \
   -w "status: HTTP %{http_code}\n"
 ```
 
