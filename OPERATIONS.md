@@ -272,6 +272,19 @@ JSON.
 
 ---
 
+## Public deployment (added 2026-06-10)
+
+The F1 viewer is now live at **https://f1-2026-viewer.amosh101.workers.dev/**
+
+- **Product:** Cloudflare **Workers with static assets** (not Cloudflare Pages). The GitHub integration auto-created a `cloudflare/workers-autoconfig` branch with `wrangler.jsonc` + `assets.directory: "."`. Both Pages and Workers-with-assets are valid choices; the security model is the same — the VPS is bypassed entirely.
+- **Auto-deploy:** Push to `main` → Cloudflare auto-builds and deploys within ~30s.
+- **Data refresh hook:** The Sunday 23:00 CAT cron (job `87ed139da066`) will be updated to call `scripts/refresh_and_deploy.py` instead of `update_f1_data.py` directly. The wrapper does the data refresh + `git add data/ + commit + push` so the public URL gets fresh data within ~60s of the cron running. The Tailscale URL keeps serving the local copy in real-time.
+- **Free tier:** Workers free (100K req/day). Site is well under any limit.
+- **VPS exposure:** Zero. The 8081 iptables DROP rule stays in place. SSH is the only public service. The Polymarket key in the trading-bot project is unreachable from the public internet.
+- **Note for future sessions:** The subagent's deploy report said "Cloudflare Pages"; the actual product is Workers-with-assets. Functionally equivalent for this static site, but if anyone goes looking for `*.pages.dev` URLs, they won't find them — the URL is `*.workers.dev`.
+
+---
+
 ## Security
 
 - **Tailscale-only** — iptables rule on the box drops non-Tailscale traffic

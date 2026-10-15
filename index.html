@@ -3269,7 +3269,7 @@ function renderSeasonStrip() {
   strip.innerHTML = '';
   if (!SEASON) return;
   const completed = SEASON_SUMMARY ? Object.keys(SEASON_SUMMARY) : [];
-  const today = '2026-06-06'; // hardcoded "today" for the demo
+  const today = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD in UTC
   // Find the first upcoming race — that's the "NEXT" one
   const firstUpcoming = SEASON.find(r => !completed.includes(`r${r.round}`));
   SEASON.forEach(race => {

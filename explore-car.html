@@ -153,9 +153,19 @@
     border: 1px solid var(--line-2);
     transform: translateY(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1);
     max-height: 78vh; overflow-y: auto;
+    /* iOS Safari scroll containment: keep the sheet scroll isolated from
+       the page scroll behind it. Without these, a touch that starts inside
+       the sheet and continues past the bottom can scroll the page, and on
+       older iOS the body scrolls under the sheet entirely. */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     padding: 16px 18px calc(20px + env(safe-area-inset-bottom)) 18px;
   }
   .sheet.open { transform: translateY(0); }
+  /* When the sheet is open, the body must not scroll. The class is toggled
+     on <body> by openPartSheet()/closePartSheet(). */
+  body.sheet-open { overflow: hidden; position: fixed; width: 100%; }
   .sheet .grab {
     width: 36px; height: 4px; background: var(--line-2); border-radius: 2px;
     margin: -4px auto 12px;
@@ -196,9 +206,20 @@
     font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--ink); font-weight: 600;
   }
-  .interp-sub {
+  .interp-badge {
     font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--ink-dim);
+    border: 1px solid var(--line);
+    background: var(--bg);
+    padding: 3px 8px; border-radius: 999px;
+    margin-left: auto; margin-right: 6px;
+    transition: color .12s, border-color .12s, background .12s;
+  }
+  .interp-badge.is-team {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(255,255,255,0.02);
+    font-weight: 600;
   }
   .sources {
     list-style: none; padding: 0; margin: 0;
@@ -222,13 +243,25 @@
     color: var(--accent); font-weight: 700;
     margin-bottom: 3px;
   }
-  .src-quote {
-    display: block; font-size: 12px; line-height: 1.4;
+  .src-spec {
+    display: block; font-size: 12px; line-height: 1.45;
     color: var(--ink); margin: 2px 0 4px;
-    font-style: italic;
-    /* Keep long quotes readable on narrow phones */
+    font-style: normal;
+    /* Specs are paragraphs, not quotes — they don't need italics or
+       curly quotes. Keep long specs readable on narrow phones. */
     overflow-wrap: anywhere; word-break: break-word;
   }
+  .src-tag {
+    display: inline-block; font-size: 8px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 1px 5px; border-radius: 4px;
+    margin: 0 4px 2px 0; font-weight: 700;
+    vertical-align: middle;
+  }
+  .src-tag-advantage { background: rgba(0, 200, 100, 0.15); color: #4acb86; }
+  .src-tag-issue     { background: rgba(220, 80, 60, 0.15);  color: #f08879; }
+  .src-row-nolink .src-link { cursor: default; }
+  .src-row-nolink .src-link:hover { border-color: var(--line); background: var(--bg); }
   .src-meta {
     display: block; font-size: 10px; color: var(--ink-dim);
     letter-spacing: 0.04em;
@@ -239,6 +272,42 @@
     text-align: center; padding: 20px 0 30px; font-size: 10px;
     color: var(--ink-dim); letter-spacing: 0.1em; text-transform: uppercase;
   }
+
+  /* ---- SVG part highlight: team-specific coverage ----
+     When a part has a verbatim team-specific quote (in
+     INTERPRETATION_BY_TEAM[team][part]), the corresponding <g> in the
+     SVG gets .has-team-quote and is rendered with a colored ring in
+     the current team's accent (var(--accent)). Toggled by
+     applyTeamQuoteHighlights() in explore-car.js. */
+  svg g.has-team-quote,
+  svg [class^="part-"].has-team-quote {
+    /* Outline ring around the part. stroke uses currentColor so it
+       inherits the team's --accent via a sibling color rule below. */
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.15));
+  }
+  svg g.has-team-quote > *,
+  svg [class^="part-"].has-team-quote {
+    stroke: var(--accent) !important;
+    stroke-width: 2.5 !important;
+  }
+  /* Subtle pulse on the highlighted part so users notice it. */
+  @keyframes accent-pulse {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.10)); }
+    50%      { filter: drop-shadow(0 0 10px rgba(255,255,255,0.28)); }
+  }
+  svg g.has-team-quote,
+  svg [class^="part-"].has-team-quote {
+    animation: accent-pulse 2.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  /* The part-row in the parts list also gets a left-edge accent stripe
+     when the part has a team-specific quote. */
+  .part-row.has-team-quote {
+    border-left: 3px solid var(--accent);
+    padding-left: 8px;
+  }
+  .part-row.has-team-quote .chev { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -437,11 +506,18 @@
     <p class="spec" id="sheetSpec">—</p>
     <p class="impact" id="sheetImpact">—</p>
 
-    <!-- Interpretation / sources from major F1 publications -->
+    <!-- Latest design — sourced from data/team-part-specs.json
+         Populated by the Sunday cron via scripts/build_team_specs.py
+         (LLM-extracted structured specs, not verbatim press quotes).
+         Schema: {team_id, part_id, spec, advantage_or_issue, confidence,
+         source: {outlet, author, date, url}}. When no team-specific spec is
+         found, the page falls back to the regulation-level
+         INTERPRETATION_DEFAULT (built into explore-car.js) and the badge
+         reads "FIA 2026". -->
     <div class="interp" id="sheetInterp">
       <div class="interp-head">
-        <span class="interp-title">Interpretation</span>
-        <span class="interp-sub">Major publications</span>
+        <span class="interp-title" id="sheetInterpTitle">Latest design</span>
+        <span class="interp-badge" id="sheetInterpBadge">FIA 2026</span>
       </div>
       <ul class="sources" id="sheetSources"></ul>
     </div>

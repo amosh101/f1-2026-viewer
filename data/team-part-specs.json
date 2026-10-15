@@ -1,0 +1,118 @@
+{
+  "schema_version": 2,
+  "generated_utc": "2026-06-10T21:48:48.713763+00:00",
+  "methodology": "Full-pipeline run combining press articles (The Race, Formula1.com, Wikipedia, PlanetF1, RaceFans) and f1technical.net forum threads. Each (article, part) pair sent to minimax-m3 for LLM extraction. Spec is kept only if (a) LLM confidence >= 0.30, (b) spec text contains the team name and part name, (c) spec is 20-600 chars. Best spec per (team, part) pair retained.",
+  "llm": {
+    "provider": "ollama-cloud",
+    "model": "minimax-m3"
+  },
+  "sources_crawled": 53,
+  "sources_failed": 0,
+  "calls": 152,
+  "specs": [
+    {
+      "team_id": "alpine",
+      "part_id": "powerUnit",
+      "spec": "Alpine did not have the latest Mercedes power unit spec available during pre-season testing and was scheduled to receive the updated engine specification in time for the Melbourne race.",
+      "advantage_or_issue": "issue",
+      "confidence": 0.85,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "",
+        "date": "2026-06-10",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32486"
+      }
+    },
+    {
+      "team_id": "aston_martin",
+      "part_id": "battery",
+      "spec": "Honda power unit battery has a weakness in recharging capability, described as 'hardly the strongest' in that area, which limits the amount of engine braking energy that can be recovered and redeployed",
+      "advantage_or_issue": "issue",
+      "confidence": 0.5,
+      "source": {
+        "outlet": "The Race",
+        "author": "",
+        "date": "2026-06-08",
+        "url": "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/"
+      }
+    },
+    {
+      "team_id": "aston_martin",
+      "part_id": "powerUnit",
+      "spec": "Powered by Honda power units supplied through the Honda Racing Corporation (HRC) subsidiary, following Honda's split from Red Bull Powertrains and its relaunch as a fully-independent engine programme.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.9,
+      "source": {
+        "outlet": "Wikipedia",
+        "author": "",
+        "date": "2026-06-08",
+        "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship"
+      }
+    },
+    {
+      "team_id": "audi",
+      "part_id": "powerUnit",
+      "spec": "Audi's power unit features an ICE with sub 16:1 compression ratio, and data analysis suggests they are barely using 8th gear (possibly indicating insufficient power or overly long gearing), while the MGU-K side is speculated to be strong.",
+      "advantage_or_issue": "issue",
+      "confidence": 0.5,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "",
+        "date": "2026-06-10",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32518"
+      }
+    },
+    {
+      "team_id": "haas",
+      "part_id": "powerUnit",
+      "spec": "Haas uses the Ferrari engine and gearbox but does not use the Ferrari gearbox casing and rear suspension, opting for their own casing and rear suspension design.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.9,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "",
+        "date": "2026-06-10",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32468"
+      }
+    },
+    {
+      "team_id": "mclaren",
+      "part_id": "powerUnit",
+      "spec": "Norris experienced a power unit anomaly during the race that had not presented itself prior to the race, described by team principal Stella as an unidentified issue requiring factory investigation.",
+      "advantage_or_issue": "issue",
+      "confidence": 0.8,
+      "source": {
+        "outlet": "The Race",
+        "author": "",
+        "date": "2026-06-08",
+        "url": "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/"
+      }
+    },
+    {
+      "team_id": "mercedes",
+      "part_id": "powerUnit",
+      "spec": "Mercedes HPP applies its patented NANOSLIDE coating technology to the aluminium engine block of the new Mercedes F1 V6 Turbo power unit, specifically at the piston and bore liner interface, where it alters the tribological surface to reduce friction—one of the single biggest frictional losses in the engine.",
+      "advantage_or_issue": "advantage",
+      "confidence": 0.9,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "",
+        "date": "2026-06-10",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=23688"
+      }
+    },
+    {
+      "team_id": "red_bull",
+      "part_id": "powerUnit",
+      "spec": "Power unit supplied by Red Bull Powertrains in partnership with Ford, which returned to F1 as an engine supplier for the first time since 2004 (when it supplied Jordan).",
+      "advantage_or_issue": "stated",
+      "confidence": 0.9,
+      "source": {
+        "outlet": "Wikipedia",
+        "author": "",
+        "date": "2026-06-08",
+        "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship"
+      }
+    }
+  ]
+}

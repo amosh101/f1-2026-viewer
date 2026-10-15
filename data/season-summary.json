@@ -208,5 +208,390 @@
       "lap": "76"
     },
     "winner_time": "2:23:31.243"
+  },
+  "r7": {
+    "round": 7,
+    "name": "Barcelona Grand Prix",
+    "date": "2026-06-14",
+    "circuit": "Circuit de Barcelona-Catalunya",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 2,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Norris",
+        "team": "McLaren"
+      }
+    ],
+    "pole": {
+      "driver": "Russell",
+      "team": "Mercedes",
+      "time": "1:14.679"
+    },
+    "fastest_lap": {
+      "driver": "Hamilton",
+      "team": "Ferrari",
+      "time": "1:20.122",
+      "lap": "44"
+    },
+    "winner_time": "1:32:28.105"
+  },
+  "r8": {
+    "round": 8,
+    "name": "Austrian Grand Prix",
+    "date": "2026-06-28",
+    "circuit": "Red Bull Ring",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      },
+      {
+        "pos": 3,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      }
+    ],
+    "pole": {
+      "driver": "Russell",
+      "team": "Mercedes",
+      "time": "1:06.113"
+    },
+    "fastest_lap": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:10.374",
+      "lap": "59"
+    },
+    "winner_time": "1:26:37.979"
+  },
+  "r9": {
+    "round": 9,
+    "name": "British Grand Prix",
+    "date": "2026-07-05",
+    "circuit": "Silverstone Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 2,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      }
+    ],
+    "pole": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:28.111"
+    },
+    "fastest_lap": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:31.777",
+      "lap": "37"
+    },
+    "winner_time": "1:27:11.335"
+  },
+  "r10": {
+    "round": 10,
+    "name": "Belgian Grand Prix",
+    "date": "2026-07-19",
+    "circuit": "Circuit de Spa-Francorchamps",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 3,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      }
+    ],
+    "pole": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:44.361"
+    },
+    "fastest_lap": {
+      "driver": "Norris",
+      "team": "McLaren",
+      "time": "1:48.890",
+      "lap": "44"
+    },
+    "winner_time": "1:24:42.479"
+  },
+  "r11": {
+    "round": 11,
+    "name": "Hungarian Grand Prix",
+    "date": "2026-07-26",
+    "circuit": "Hungaroring",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Norris",
+        "team": "McLaren"
+      },
+      {
+        "pos": 2,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      },
+      {
+        "pos": 3,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      }
+    ],
+    "pole": {
+      "driver": "Norris",
+      "team": "McLaren",
+      "time": "1:17.207"
+    },
+    "fastest_lap": {
+      "driver": "Leclerc",
+      "team": "Ferrari",
+      "time": "1:22.000",
+      "lap": "58"
+    },
+    "winner_time": "1:39:56.180"
+  },
+  "r12": {
+    "round": 12,
+    "name": "Dutch Grand Prix",
+    "date": "2026-08-23",
+    "circuit": "Circuit Park Zandvoort",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Norris",
+        "team": "McLaren"
+      },
+      {
+        "pos": 2,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Russell",
+        "team": "Mercedes"
+      }
+    ],
+    "pole": {
+      "driver": "Norris",
+      "team": "McLaren",
+      "time": "1:11.163"
+    },
+    "fastest_lap": {
+      "driver": "Leclerc",
+      "team": "Ferrari",
+      "time": "1:14.230",
+      "lap": "60"
+    },
+    "winner_time": "2:04:44.859"
+  },
+  "r13": {
+    "round": 13,
+    "name": "Italian Grand Prix",
+    "date": "2026-09-06",
+    "circuit": "Autodromo Nazionale di Monza",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      }
+    ],
+    "pole": {
+      "driver": "Gasly",
+      "team": "Alpine F1 Team",
+      "time": "1:21.786"
+    },
+    "fastest_lap": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:23.504",
+      "lap": "53"
+    },
+    "winner_time": "1:51:15.281"
+  },
+  "r14": {
+    "round": 14,
+    "name": "Spanish Grand Prix",
+    "date": "2026-09-13",
+    "circuit": "Madring",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      },
+      {
+        "pos": 3,
+        "driver": "Norris",
+        "team": "McLaren"
+      }
+    ],
+    "pole": {
+      "driver": "Norris",
+      "team": "McLaren",
+      "time": "1:31.824"
+    },
+    "fastest_lap": {
+      "driver": "Russell",
+      "team": "Mercedes",
+      "time": "1:35.587",
+      "lap": "49"
+    },
+    "winner_time": "1:34:23.754"
+  },
+  "r15": {
+    "round": 15,
+    "name": "Azerbaijan Grand Prix",
+    "date": "2026-09-26",
+    "circuit": "Baku City Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Russell",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      },
+      {
+        "pos": 3,
+        "driver": "Hadjar",
+        "team": "Red Bull"
+      }
+    ],
+    "pole": {
+      "driver": "Russell",
+      "team": "Mercedes",
+      "time": "1:42.526"
+    },
+    "fastest_lap": {
+      "driver": "Russell",
+      "team": "Mercedes",
+      "time": "1:44.916",
+      "lap": "49"
+    },
+    "winner_time": "1:38:02.143"
+  },
+  "r16": {
+    "round": 16,
+    "name": "Bahrain Grand Prix in Malaysia",
+    "date": "2026-10-04",
+    "circuit": "Sepang International Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      },
+      {
+        "pos": 2,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 3,
+        "driver": "Hamilton",
+        "team": "Ferrari"
+      }
+    ],
+    "pole": {
+      "driver": "Verstappen",
+      "team": "Red Bull",
+      "time": "1:35.130"
+    },
+    "fastest_lap": {
+      "driver": "Verstappen",
+      "team": "Red Bull",
+      "time": "1:38.220",
+      "lap": "55"
+    },
+    "winner_time": "1:47:14.808"
+  },
+  "r17": {
+    "round": 17,
+    "name": "Singapore Grand Prix",
+    "date": "2026-10-11",
+    "circuit": "Marina Bay Street Circuit",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      },
+      {
+        "pos": 2,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 3,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      }
+    ],
+    "pole": {
+      "driver": "Verstappen",
+      "team": "Red Bull",
+      "time": "1:31.373"
+    },
+    "fastest_lap": {
+      "driver": "Leclerc",
+      "team": "Ferrari",
+      "time": "1:35.202",
+      "lap": "41"
+    },
+    "winner_time": "1:42:00.785"
   }
 }
