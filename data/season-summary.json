@@ -593,5 +593,40 @@
       "lap": "41"
     },
     "winner_time": "1:42:00.785"
+  },
+  "r18": {
+    "round": 18,
+    "name": "United States Grand Prix",
+    "date": "2026-10-25",
+    "circuit": "Circuit of the Americas",
+    "podium": [
+      {
+        "pos": 1,
+        "driver": "Antonelli",
+        "team": "Mercedes"
+      },
+      {
+        "pos": 2,
+        "driver": "Leclerc",
+        "team": "Ferrari"
+      },
+      {
+        "pos": 3,
+        "driver": "Verstappen",
+        "team": "Red Bull"
+      }
+    ],
+    "pole": {
+      "driver": "Antonelli",
+      "team": "Mercedes",
+      "time": "1:34.035"
+    },
+    "fastest_lap": {
+      "driver": "Leclerc",
+      "team": "Ferrari",
+      "time": "1:37.976",
+      "lap": "42"
+    },
+    "winner_time": "1:35:16.650"
   }
 }

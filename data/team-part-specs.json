@@ -1,50 +1,62 @@
 {
   "schema_version": 2,
-  "generated_utc": "2026-06-10T21:48:48.713763+00:00",
-  "methodology": "Full-pipeline run combining press articles (The Race, Formula1.com, Wikipedia, PlanetF1, RaceFans) and f1technical.net forum threads. Each (article, part) pair sent to minimax-m3 for LLM extraction. Spec is kept only if (a) LLM confidence >= 0.30, (b) spec text contains the team name and part name, (c) spec is 20-600 chars. Best spec per (team, part) pair retained.",
+  "generated_utc": "2026-10-27T16:39:06.667741+00:00",
+  "methodology": "Verbatim article paragraphs are sent to minimax-m3 (via ollama-cloud) for structured spec extraction. The LLM is asked to identify the team's specific technical specification or design change for each (team, part) pair. Specs are rejected if the LLM's confidence is below 0.35, if the spec text doesn't mention the team or the part, or if the article text doesn't actually support the claim. (team, part) pairs without a valid spec are simply absent from the output. The page falls back to the regulation-level INTERPRETATION_DEFAULT for those pairs.",
   "llm": {
     "provider": "ollama-cloud",
     "model": "minimax-m3"
   },
-  "sources_crawled": 53,
-  "sources_failed": 0,
-  "calls": 152,
+  "sources_crawled": 40,
+  "sources_failed": 1,
   "specs": [
     {
       "team_id": "alpine",
-      "part_id": "powerUnit",
-      "spec": "Alpine did not have the latest Mercedes power unit spec available during pre-season testing and was scheduled to receive the updated engine specification in time for the Melbourne race.",
-      "advantage_or_issue": "issue",
-      "confidence": 0.85,
+      "part_id": "rearWing",
+      "spec": "Alpine uses an inverted rear wing, allowing airflow to follow and compress against the wing rather than being abruptly interrupted under DRS, theoretically increasing downforce.",
+      "advantage_or_issue": "advantage",
+      "confidence": 0.78,
       "source": {
         "outlet": "F1 Technical",
-        "author": "",
-        "date": "2026-06-10",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
         "url": "https://www.f1technical.net/forum/viewtopic.php?t=32486"
       }
     },
     {
-      "team_id": "aston_martin",
-      "part_id": "battery",
-      "spec": "Honda power unit battery has a weakness in recharging capability, described as 'hardly the strongest' in that area, which limits the amount of engine braking energy that can be recovered and redeployed",
-      "advantage_or_issue": "issue",
-      "confidence": 0.5,
+      "team_id": "alpine",
+      "part_id": "sidepods",
+      "spec": "Alpine opted for bulky sidepods with a large sidepod inlet and less centreline cooling than the Racing Bulls design.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.65,
       "source": {
-        "outlet": "The Race",
-        "author": "",
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
         "date": "2026-06-08",
-        "url": "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/"
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32458"
+      }
+    },
+    {
+      "team_id": "aston_martin",
+      "part_id": "nose",
+      "spec": "Aston Martin’s nose has a notably wide, broad front section.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.62,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32460"
       }
     },
     {
       "team_id": "aston_martin",
       "part_id": "powerUnit",
-      "spec": "Powered by Honda power units supplied through the Honda Racing Corporation (HRC) subsidiary, following Honda's split from Red Bull Powertrains and its relaunch as a fully-independent engine programme.",
+      "spec": "Aston Martin receives Honda's own 2026-spec power unit under an exclusive works-team agreement, following the end of Honda's relationship with Red Bull Racing.",
       "advantage_or_issue": "stated",
-      "confidence": 0.9,
+      "confidence": 0.8,
       "source": {
         "outlet": "Wikipedia",
-        "author": "",
+        "author": "Wikipedia editors",
         "date": "2026-06-08",
         "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship"
       }
@@ -52,66 +64,222 @@
     {
       "team_id": "audi",
       "part_id": "powerUnit",
-      "spec": "Audi's power unit features an ICE with sub 16:1 compression ratio, and data analysis suggests they are barely using 8th gear (possibly indicating insufficient power or overly long gearing), while the MGU-K side is speculated to be strong.",
-      "advantage_or_issue": "issue",
-      "confidence": 0.5,
-      "source": {
-        "outlet": "F1 Technical",
-        "author": "",
-        "date": "2026-06-10",
-        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32518"
-      }
-    },
-    {
-      "team_id": "haas",
-      "part_id": "powerUnit",
-      "spec": "Haas uses the Ferrari engine and gearbox but does not use the Ferrari gearbox casing and rear suspension, opting for their own casing and rear suspension design.",
+      "spec": "Audi enters Formula One as a works team in 2026 using its own power unit.",
       "advantage_or_issue": "stated",
-      "confidence": 0.9,
-      "source": {
-        "outlet": "F1 Technical",
-        "author": "",
-        "date": "2026-06-10",
-        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32468"
-      }
-    },
-    {
-      "team_id": "mclaren",
-      "part_id": "powerUnit",
-      "spec": "Norris experienced a power unit anomaly during the race that had not presented itself prior to the race, described by team principal Stella as an unidentified issue requiring factory investigation.",
-      "advantage_or_issue": "issue",
       "confidence": 0.8,
       "source": {
+        "outlet": "Wikipedia",
+        "author": "Wikipedia editors",
+        "date": "2026-06-08",
+        "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship"
+      }
+    },
+    {
+      "team_id": "cadillac",
+      "part_id": "frontWing",
+      "spec": "Cadillac's front wing is described as conservative and close to the FIA show car, with differently shaped endplates and outermost elements appearing to outwash rather than point in the opposite direction as on the RB22 render.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.55,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32463"
+      }
+    },
+    {
+      "team_id": "cadillac",
+      "part_id": "sidepods",
+      "spec": "The Cadillac's sidepod intakes resemble those of the Ferrari F1-75 but feature a slight underbite, while the rear of the sidepod uses ramp geometry reminiscent of 2012-13 F1 cars.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.68,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32463"
+      }
+    },
+    {
+      "team_id": "ferrari",
+      "part_id": "brakeDuct",
+      "spec": "Leclerc will adopt Lewis Hamilton's brake configuration for Barcelona to address the Ferrari's inconsistent braking and unpredictable corner-to-corner behavior.",
+      "advantage_or_issue": "issue",
+      "confidence": 0.88,
+      "source": {
         "outlet": "The Race",
-        "author": "",
+        "author": "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm",
         "date": "2026-06-08",
         "url": "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/"
       }
     },
     {
-      "team_id": "mercedes",
-      "part_id": "powerUnit",
-      "spec": "Mercedes HPP applies its patented NANOSLIDE coating technology to the aluminium engine block of the new Mercedes F1 V6 Turbo power unit, specifically at the piston and bore liner interface, where it alters the tribological surface to reduce friction—one of the single biggest frictional losses in the engine.",
-      "advantage_or_issue": "advantage",
-      "confidence": 0.9,
+      "team_id": "ferrari",
+      "part_id": "diffuser",
+      "spec": "The SF-26 appears to feature a hole in its rear diffuser, similar to the Mercedes rear-diffuser treatment. It is speculated that this may be an early A-Spec car intended for Spain testing.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.45,
       "source": {
         "outlet": "F1 Technical",
-        "author": "",
-        "date": "2026-06-10",
-        "url": "https://www.f1technical.net/forum/viewtopic.php?t=23688"
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32455"
+      }
+    },
+    {
+      "team_id": "ferrari",
+      "part_id": "powerUnit",
+      "spec": "The 2026 Scuderia Ferrari car is listed as using a Ferrari V6 turbo power unit.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.78,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32419"
+      }
+    },
+    {
+      "team_id": "ferrari",
+      "part_id": "suspF",
+      "spec": "Ferrari's front suspension and brake ducts were described as being similar to those of Mercedes.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.62,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32455"
+      }
+    },
+    {
+      "team_id": "haas",
+      "part_id": "powerUnit",
+      "spec": "Haas uses the Ferrari engine and gearbox, but not the Ferrari gearbox casing or rear suspension.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.75,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32468"
+      }
+    },
+    {
+      "team_id": "haas",
+      "part_id": "sidepods",
+      "spec": "The Haas sidepods feature very large inlet openings and generally chunky sidepod bodywork.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.72,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32456"
+      }
+    },
+    {
+      "team_id": "haas",
+      "part_id": "suspR",
+      "spec": "The rear suspension was described as a non-Ferrari, Haas-specific component rather than Ferrari's, despite the car using a Ferrari engine and gearbox; the gearbox casing was also non-Ferrari.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.45,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32468"
+      }
+    },
+    {
+      "team_id": "mclaren",
+      "part_id": "diffuser",
+      "spec": "McLaren appears to carry forward its 2025 sidepod design and philosophy, with a more aggressive ramp down into the diffuser.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.45,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32492"
+      }
+    },
+    {
+      "team_id": "mclaren",
+      "part_id": "sidepods",
+      "spec": "McLaren's 2026 sidepods appear to retain the 2025 sidepod design philosophy, while adopting a more aggressive ramp down toward the diffuser.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.5,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32492"
+      }
+    },
+    {
+      "team_id": "mercedes",
+      "part_id": "frontWing",
+      "spec": "Mercedes is said to exploit a front-wing flap regulation loophole, using the permitted FW-profile rotation range to double the available transition duration when moving the flap between straight and corner modes.",
+      "advantage_or_issue": "advantage",
+      "confidence": 0.5,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32563"
+      }
+    },
+    {
+      "team_id": "mercedes",
+      "part_id": "powerUnit",
+      "spec": "Mercedes supplies its power units to Alpine for the 2026 season, replacing Renault's engine-supplier role with the Alpine team.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.8,
+      "source": {
+        "outlet": "Wikipedia",
+        "author": "Wikipedia editors",
+        "date": "2026-06-08",
+        "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship"
+      }
+    },
+    {
+      "team_id": "rb",
+      "part_id": "frontWing",
+      "spec": "VCARB's front-wing rendering shows four moving flaps with two actuators, apparently using a front-hinged flap arrangement that would fail the Straight Mode test.",
+      "advantage_or_issue": "issue",
+      "confidence": 0.62,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32457"
       }
     },
     {
       "team_id": "red_bull",
-      "part_id": "powerUnit",
-      "spec": "Power unit supplied by Red Bull Powertrains in partnership with Ford, which returned to F1 as an engine supplier for the first time since 2004 (when it supplied Jordan).",
-      "advantage_or_issue": "stated",
-      "confidence": 0.9,
+      "part_id": "battery",
+      "spec": "Albon managed the Red Bull's battery energy deployment to compensate for the Honda's limited recharge capability, but a deployment issue remained and cost the car engine braking.",
+      "advantage_or_issue": "issue",
+      "confidence": 0.78,
       "source": {
-        "outlet": "Wikipedia",
-        "author": "",
+        "outlet": "The Race",
+        "author": "Josh Suttill, Jon Noble, Jack Cozens, Scott Mitchell-Malm",
         "date": "2026-06-08",
-        "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship"
+        "url": "https://www.the-race.com/formula-1/f1-2026-monaco-grand-prix-everything-we-learned/"
+      }
+    },
+    {
+      "team_id": "williams",
+      "part_id": "suspR",
+      "spec": "Williams' rear suspension does not use push-rod or pull-rod linkages; the team has stated that the front suspension will use pull-rods.",
+      "advantage_or_issue": "stated",
+      "confidence": 0.72,
+      "source": {
+        "outlet": "F1 Technical",
+        "author": "f1technical forum contributors",
+        "date": "2026-06-08",
+        "url": "https://www.f1technical.net/forum/viewtopic.php?t=32462"
       }
     }
   ]

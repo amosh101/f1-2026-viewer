@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-11T21:00:53+00:00",
+  "generated_utc": "2026-10-27T16:31:46+00:00",
   "methodology": "Mechanical/electrical DNFs derived from official race classification status field. Excludes: Finished, Collision, Damage, Accident, Spun off, Withdrew, Did not start, +N Lap, 107% rule, Disqualified. Source: Jolpica Ergast mirror (F1 official).",
   "rounds_covered": [
     {
@@ -86,6 +86,11 @@
       "round": 17,
       "name": "Singapore Grand Prix",
       "date": "2026-10-11"
+    },
+    {
+      "round": 18,
+      "name": "United States Grand Prix",
+      "date": "2026-10-25"
     }
   ],
   "teams": [
@@ -301,7 +306,7 @@
     },
     {
       "team_id": "cadillac",
-      "issue_count": 13,
+      "issue_count": 14,
       "issues": [
         {
           "round": 1,
@@ -458,6 +463,18 @@
           "status": "Retired",
           "laps_completed": "7",
           "classification_position": "R"
+        },
+        {
+          "round": 18,
+          "race": "United States Grand Prix",
+          "date": "2026-10-25",
+          "driver_id": "bottas",
+          "driver_name": "Valtteri Bottas",
+          "permanent_number": "77",
+          "car_number": "77",
+          "status": "Retired",
+          "laps_completed": "48",
+          "classification_position": "R"
         }
       ]
     },
@@ -576,6 +593,84 @@
       ]
     },
     {
+      "team_id": "haas",
+      "issue_count": 6,
+      "issues": [
+        {
+          "round": 3,
+          "race": "Japanese Grand Prix",
+          "date": "2026-03-29",
+          "driver_id": "bearman",
+          "driver_name": "Oliver Bearman",
+          "permanent_number": "87",
+          "car_number": "87",
+          "status": "Retired",
+          "laps_completed": "20",
+          "classification_position": "R"
+        },
+        {
+          "round": 6,
+          "race": "Monaco Grand Prix",
+          "date": "2026-06-07",
+          "driver_id": "bearman",
+          "driver_name": "Oliver Bearman",
+          "permanent_number": "87",
+          "car_number": "87",
+          "status": "Retired",
+          "laps_completed": "27",
+          "classification_position": "R"
+        },
+        {
+          "round": 7,
+          "race": "Barcelona Grand Prix",
+          "date": "2026-06-14",
+          "driver_id": "bearman",
+          "driver_name": "Oliver Bearman",
+          "permanent_number": "87",
+          "car_number": "87",
+          "status": "Retired",
+          "laps_completed": "60",
+          "classification_position": "17"
+        },
+        {
+          "round": 12,
+          "race": "Dutch Grand Prix",
+          "date": "2026-08-23",
+          "driver_id": "ocon",
+          "driver_name": "Esteban Ocon",
+          "permanent_number": "31",
+          "car_number": "31",
+          "status": "Retired",
+          "laps_completed": "52",
+          "classification_position": "R"
+        },
+        {
+          "round": 12,
+          "race": "Dutch Grand Prix",
+          "date": "2026-08-23",
+          "driver_id": "bearman",
+          "driver_name": "Oliver Bearman",
+          "permanent_number": "87",
+          "car_number": "87",
+          "status": "Retired",
+          "laps_completed": "2",
+          "classification_position": "R"
+        },
+        {
+          "round": 18,
+          "race": "United States Grand Prix",
+          "date": "2026-10-25",
+          "driver_id": "bearman",
+          "driver_name": "Oliver Bearman",
+          "permanent_number": "87",
+          "car_number": "87",
+          "status": "Retired",
+          "laps_completed": "24",
+          "classification_position": "R"
+        }
+      ]
+    },
+    {
       "team_id": "red_bull",
       "issue_count": 6,
       "issues": [
@@ -654,74 +749,8 @@
       ]
     },
     {
-      "team_id": "haas",
-      "issue_count": 5,
-      "issues": [
-        {
-          "round": 3,
-          "race": "Japanese Grand Prix",
-          "date": "2026-03-29",
-          "driver_id": "bearman",
-          "driver_name": "Oliver Bearman",
-          "permanent_number": "87",
-          "car_number": "87",
-          "status": "Retired",
-          "laps_completed": "20",
-          "classification_position": "R"
-        },
-        {
-          "round": 6,
-          "race": "Monaco Grand Prix",
-          "date": "2026-06-07",
-          "driver_id": "bearman",
-          "driver_name": "Oliver Bearman",
-          "permanent_number": "87",
-          "car_number": "87",
-          "status": "Retired",
-          "laps_completed": "27",
-          "classification_position": "R"
-        },
-        {
-          "round": 7,
-          "race": "Barcelona Grand Prix",
-          "date": "2026-06-14",
-          "driver_id": "bearman",
-          "driver_name": "Oliver Bearman",
-          "permanent_number": "87",
-          "car_number": "87",
-          "status": "Retired",
-          "laps_completed": "60",
-          "classification_position": "17"
-        },
-        {
-          "round": 12,
-          "race": "Dutch Grand Prix",
-          "date": "2026-08-23",
-          "driver_id": "ocon",
-          "driver_name": "Esteban Ocon",
-          "permanent_number": "31",
-          "car_number": "31",
-          "status": "Retired",
-          "laps_completed": "52",
-          "classification_position": "R"
-        },
-        {
-          "round": 12,
-          "race": "Dutch Grand Prix",
-          "date": "2026-08-23",
-          "driver_id": "bearman",
-          "driver_name": "Oliver Bearman",
-          "permanent_number": "87",
-          "car_number": "87",
-          "status": "Retired",
-          "laps_completed": "2",
-          "classification_position": "R"
-        }
-      ]
-    },
-    {
       "team_id": "alpine",
-      "issue_count": 4,
+      "issue_count": 5,
       "issues": [
         {
           "round": 4,
@@ -769,6 +798,18 @@
           "car_number": "43",
           "status": "Retired",
           "laps_completed": "29",
+          "classification_position": "R"
+        },
+        {
+          "round": 18,
+          "race": "United States Grand Prix",
+          "date": "2026-10-25",
+          "driver_id": "colapinto",
+          "driver_name": "Franco Colapinto",
+          "permanent_number": "43",
+          "car_number": "43",
+          "status": "Retired",
+          "laps_completed": "35",
           "classification_position": "R"
         }
       ]
