@@ -112,16 +112,26 @@ def setup_logging(verbose: bool) -> logging.Logger:
 
 # ---------- http ----------
 def http_get_json(url: str, logger: logging.Logger) -> dict[str, Any]:
-    """GET a URL and return parsed JSON. Retries on 5xx / network errors."""
+    """GET a URL and return parsed JSON. Retries on 429 / 5xx / network errors.
+
+    Jolpica Ergast rate-limits hard on bursty refreshes (2026-10-27 run hit
+    429 on every re-fetch); escalate the backoff for 429, don't raise it."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     last_err: Exception | None = None
-    for attempt in range(3):
+    backoff = (5, 15, 30)
+    for attempt in range(4):
         try:
             with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
                 body = resp.read()
                 return json.loads(body.decode("utf-8"))
         except urllib.error.HTTPError as e:
-            if 500 <= e.code < 600 and attempt < 2:
+            if e.code == 429 and attempt < 3:
+                wait = backoff[attempt]
+                logger.warning("HTTP 429 from %s, backing off %ss (attempt %d/4)", url, wait, attempt + 1)
+                time.sleep(wait)
+                last_err = e
+                continue
+            if 500 <= e.code < 600 and attempt < 3:
                 logger.warning("HTTP %s from %s, retrying in 2s", e.code, url)
                 time.sleep(2)
                 last_err = e
@@ -129,7 +139,7 @@ def http_get_json(url: str, logger: logging.Logger) -> dict[str, Any]:
             raise
         except (urllib.error.URLError, TimeoutError) as e:
             last_err = e
-            if attempt < 2:
+            if attempt < 3:
                 logger.warning("network error %s, retrying in 2s", e)
                 time.sleep(2)
                 continue
